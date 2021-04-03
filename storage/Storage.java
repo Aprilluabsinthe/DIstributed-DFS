@@ -11,14 +11,14 @@ public interface Storage {
      * @throws FileNotFoundException
      * @throws IllegalArgumentException
      */
-    public long Size(Path path)
+    public long Size(String path)
             throws FileNotFoundException, IllegalArgumentException;
 
     /**
      * Reads a sequence of bytes from a file.
      * @return
      */
-    public byte[] Read(Path path, long offset, long length)
+    public byte[] Read(String path, int offset, int length)
             throws FileNotFoundException,IndexOutOfBoundsException,IOException,IllegalArgumentException;
 
     /**
@@ -32,7 +32,7 @@ public interface Storage {
      * @throws IOException
      * @throws IllegalArgumentException
      */
-    public boolean Write(Path path, long offset, byte[] data)
+    public boolean Write(String path, int offset, String data)
             throws FileNotFoundException,IndexOutOfBoundsException,IOException,IllegalArgumentException;
 
 }
