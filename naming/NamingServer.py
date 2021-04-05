@@ -3,7 +3,7 @@ from threading import Thread
 from threading import Event
 import requests
 from Registration import Registration, ClientHost
-from FileNode import FileNode
+from FileLeaf import FileLeaf
 from collections import defaultdict
 
 all_storageserver_files = set()
@@ -12,9 +12,6 @@ replica_report = defaultdict(dict)
 registered_storageserver = list()
 system_root = dict()
 system_root[''] = dict()
-queue = list()
-el_queue = list()
-shared_lock_counter = 0
 
 registration_api = Flask('registration_api')
 
@@ -31,8 +28,7 @@ def register_server():
     requested_storageserver = Registration(request_content["storage_ip"], request_content["client_port"],
                                            request_content["command_port"], request_content["files"])
     # check duplicate, return 409
-    has_duplicate = check_duplicate_storageserver(requested_storageserver)
-    if has_duplicate:
+    if requested_storageserver in registered_storageserver:
         return make_response(jsonify(
             {
                 "exception_type": "IllegalStateException",
@@ -43,26 +39,10 @@ def register_server():
     duplicate_files = find_duplicate_files(requested_storageserver)
     add_files(requested_storageserver, duplicate_files)
 
-    files_to_delete_dict = dict()
-    files_to_delete_dict["files"] = duplicate_files
-
     registered_storageserver.append(requested_storageserver)
-    files_response = files_to_delete_dict
-
-    if "exception_type" in files_response:
-        return make_response(jsonify(
-            {"exception_type": "IllegalStateException",
-             "exception_info": "This storage client already registered."}
-        ), 409)
-
-    return make_response(jsonify(files_response), 200, )
-
-
-def check_duplicate_storageserver(requested_storageserver):
-    for storageserver in registered_storageserver:
-        if storageserver == requested_storageserver:
-            return True
-    return False
+    return make_response(jsonify({
+        "files": duplicate_files
+    }), 200)
 
 
 def find_duplicate_files(requested_storageserver):
@@ -76,42 +56,50 @@ def find_duplicate_files(requested_storageserver):
 def construct_file_tree(files_to_construct):
     for singlefile in files_to_construct:
         file_path = singlefile.split("/")
-        root = system_root
+        dir = system_root
         for directory in file_path[:-1]:
-            if directory not in root:
-                root[directory] = dict()
-            root = root[directory]
+            if directory not in dir:
+                dir[directory] = dict()
+            dir = dir[directory]
 
 
 def add_files(requested_storageserver, duplicate_files):
+    # construct file dictionary tree
+    # example: system_root = {"tmp":{"dist-systems-0"} for /tmp/dist-systems-0
     construct_file_tree(requested_storageserver.files)
 
+    # dive into the file root
     for singlefile in requested_storageserver.files:
         file_path = singlefile.split("/")
         filename = file_path[-1]
-        root = system_root
+        dir = system_root
         for directory in file_path[:-1]:
-            root = root[directory]
+            dir = dir[directory]
 
         # now in the file dir
-        if filename in root:
+        if filename in dir:
             duplicate_files.append(singlefile)
         else:
-            if "files" in root:
-                root["files"].append(filename)
-                root["file_nodes"].append(FileNode(filename))
+            if "files" in dir:
+                dir["files"].append(filename)
+                dir["fileleaf"].append(FileLeaf(filename))
             else:
-                root["files"] = list([filename])
-                root["file_nodes"] = list([FileNode(filename)])
+                dir["files"] = list([filename])
+                dir["fileleaf"] = list([FileLeaf(filename)])
 
     # get file to add
+    # get file in requested_storageserver but not in duplicate files
     add_list = [file for file in requested_storageserver.files if (file not in duplicate_files)]
+    # update all_storageserver_files set using union
     all_storageserver_files.update(set(add_list))
 
-    clienthost_keypair = (requested_storageserver.storage_ip, requested_storageserver.client_port)
-    storageserver_file_map[clienthost_keypair].update(
+    # add to storageserver_file_map
+    # add requested_storageserver.files and minus replica
+    register_keypair = (requested_storageserver.storage_ip, requested_storageserver.client_port)
+    storageserver_file_map[register_keypair].update(
         set(requested_storageserver.files).union(set(add_list)))
 
+    # record initial replica
     for file in add_list:
         if file not in replica_report:
             replica_report[file]["storage_servers"] = list()
@@ -121,14 +109,17 @@ def add_files(requested_storageserver, duplicate_files):
             replica_report[file]["storage_servers"].append(requested_storageserver.command_port)
 
 
-def initiate_deletion(path, command_port):
-    req_obj = {
-        "path": path,
-    }
-    resp = requests.post("http://localhost:" + str(command_port) + "/storage_delete",
-                         json=req_obj)
-    delete_successful = json.loads(resp.text)["success"]
-    return delete_successful
+'''
+ref https://stackoverflow.com/questions/20001229/how-to-get-posted-json-in-flask
+'''
+
+
+def send_deletion_request(path, command_port):
+    response = json.loads(
+        requests.post("http://localhost:" + str(command_port) + "/storage_delete",
+                      json={"path": path}).text
+    )
+    return response["success"]
 
 
 def start_registration_api():
@@ -141,12 +132,9 @@ service_api = Flask('service_api')
 @service_api.route('/is_valid_path', methods=['POST'])
 def is_valid_path():
     request_content = request.json
-
     checkpath = path_invalid(request_content['path'])
-
     if checkpath == "valid":
         return make_response(jsonify({"success": True}), 200)
-
     else:
         return make_response(jsonify({"success": False}), 404)
 
@@ -154,47 +142,58 @@ def is_valid_path():
 @service_api.route('/getstorage', methods=['POST'])
 def get_storage():
     request_content = request.json
-    ip_addr, port_num = get_storage_info(request_content["path"])
-    # clienthost = get_storage_info(request_obj["path"])
-    # ip_addr= clienthost.get_storage_ip()
-    # port_num = clienthost.get_client_port()
-    dir_path = request_content["path"]
+    stroage_ip, client_port = get_storage_info(request_content["path"])
+    requested_path = request_content["path"]
 
-    checkpath = path_invalid(dir_path)
+    # IllegalArgumentException
+    checkpath = path_invalid(requested_path)
     if checkpath != "valid":
         return checkpath
 
-    if ip_addr is None or port_num is None:
+    # FileNotFoundException
+    if stroage_ip is None or client_port is None:
         return make_response(jsonify({
             "exception_type": "FileNotFoundException",
-            "exception_info": "File not found"
-        }), 404)
+            "exception_info": "File/path cannot be found."
+        }), 400)
     else:
         return make_response(jsonify({
-            "server_ip": ip_addr,
-            "server_port": port_num
+            "server_ip": stroage_ip,
+            "server_port": client_port
         }), 200)
+
+
+def path_cleaner(path):
+    path_list = path.strip().split("/")
+    cleaner = [path_list[0]]
+    cleaner.extend([x for x in path_list[1:] if x])
+    return cleaner
+
+
+'''
+Lists the contents of a directory.
+'''
 
 
 @service_api.route('/list', methods=['POST'])
 def list_contents():
     request_content = request.json
-    dir_path = request_content["path"]
+    requested_path = request_content["path"]
 
-    checkpath = path_invalid(dir_path)
+    # IllegalArgumentException
+    checkpath = path_invalid(requested_path)
     if checkpath != "valid":
         return checkpath
 
-    # file_list = file_system_operations(request_content["path"], list_files=True)
-    file_list = list_helper(request_content["path"])
-    if file_list is None:
+    file_list = list_helper(requested_path)
+
+    if file_list is None or len(file_list) == 0:
         return make_response(jsonify({
             "exception_type": "FileNotFoundException",
             "exception_info": "given path does not refer to a directory."
-        }), 404)
+        }), 400)
 
-    return make_response(jsonify({
-        "files": file_list}), 200)
+    return make_response(jsonify({"files": file_list}), 200)
 
 
 def list_helper(path):
@@ -202,211 +201,253 @@ def list_helper(path):
     if path == '/':
         path_list = path_list[:-1]
 
-    root = system_root
+    # dive into dir
+    dir = system_root
     for directory in path_list:
-        if directory not in root and not (directory == ''):
+        if directory not in dir and not (directory == ''):
             return None
-        root = root[directory]
+        dir = dir[directory]
 
-    contents = list()
-    if "files" in root:
-        contents.extend(root["files"])
-    directories = list(root.keys())
-    if "files" in directories:
-        del (directories[directories.index("files")])
-    if "file_nodes" in directories:
-        del (directories[directories.index("file_nodes")])
-    contents.extend(directories)
-    return contents
+    list_contents = list()
+    if "files" in dir:
+        list_contents.extend(dir["files"])
+
+    dir_keys = dir.keys()
+    keys_to_remove = ["files", "fileleaf"]
+    keys_to_append = [key for key in dir_keys if key not in keys_to_remove]
+    list_contents.extend(keys_to_append)
+    return list_contents
+
+
+"""
+Determines whether a path refers to a directory.  
+"""
 
 
 @service_api.route('/is_directory', methods=['POST'])
 def check_directory():
-    request_obj = request.json
-    dir_path = request_obj["path"]
-    if not dir_path or len(dir_path) == 0:
-        return make_response(jsonify({
-            "exception_type": "IllegalArgumentException",
-            "exception_info": "File/path cannot be found."
-        }), 404)
+    requested_content = request.json
+    requested_path = requested_content["path"]
 
-    checkpath = path_invalid(dir_path)
+    # IllegalArgumentException
+    checkpath = path_invalid(requested_path)
     if checkpath != "valid":
         return checkpath
 
-    if dir_path == "/":
+    if requested_path == "/":
         return make_response(jsonify({
             "success": True}), 200)
 
-    success = is_directory_helper(request_obj["path"])
+    success = is_directory_helper(requested_content["path"])
+
     if success is None:
         return make_response(jsonify({
             "exception_type": "FileNotFoundException",
             "exception_info": "File/path cannot be found."
-        }), 404)
+        }), 400)
 
-    return make_response(jsonify({
-        "success": success}), 200)
+    return make_response(jsonify({"success": success}), 200)
 
 
-def is_directory_helper(path):
-    path_list = path.split("/")
-    clean_list = list()
-    clean_list.append(path_list[0])
-    for i in range(1, len(path_list)):
-        if not (path_list[i] == ''):
-            clean_list.append(path_list[i])
-    dir_elem = clean_list[-1]
+@service_api.route('/is_file', methods=['POST'])
+def check_directory():
+    requested_content = request.json
+    requested_path = requested_content["path"]
+
+    # IllegalArgumentException
+    checkpath = path_invalid(requested_path)
+    if checkpath != "valid":
+        return checkpath
+
+    if requested_path == "/":
+        return make_response(jsonify({
+            "success": True}), 200)
+
+    success = is_file_helper(requested_content["path"])
+
+    if success is None:
+        return make_response(jsonify({
+            "exception_type": "FileNotFoundException",
+            "exception_info": "File/path cannot be found."
+        }), 400)
+
+    return make_response(jsonify({"success": success}), 200)
+
+
+def is_directory(name, root):
+    if name in root:
+        return True
+    if "files" in root and name in root["files"]:
+        return False
+    return None
+
+def is_file(name, root):
+    if name in root:
+        return False
+    if "files" in root and name in root["files"]:
+        return True
+
+def is_file_helper(path):
+    path_list = path_cleaner(path)
+    dir_name = path_list[-1]
 
     root = system_root
-    for directory in clean_list[:-1]:
-        if directory not in root and not (directory == ''):
+    for directory in path_list[:-1]:
+        if (directory not in root) and not (directory == ''):
             return None
         root = root[directory]
 
-    if dir_elem in root:
-        return True
-    if "files" in root and dir_elem in root["files"]:
+    if "files" in root and dir_name in root["files"]:
         return False
+    return is_file(dir_name, root)
+
+def is_directory_helper(path):
+    path_list = path_cleaner(path)
+    dir_name = path_list[-1]
+
+    root = system_root
+    for directory in path_list[:-1]:
+        if (directory not in root) and not (directory == ''):
+            return None
+        root = root[directory]
+
+    return is_directory(dir_name, root)
 
 
 @service_api.route('/create_directory', methods=['POST'])
 def create_directory():
-    request_obj = request.json
-    dir_path = request_obj["path"]
-    if len(dir_path) == 0:
-        return make_response(jsonify({
-            "exception_type": "IllegalArgumentException",
-            "exception_info": "Provided empty path"
-        }), 404)
+    requested_content = request.json
+    dir_path = requested_content["path"]
 
-    checkpath = path_invalid(dir_path)
-    if checkpath != "valid":
-        return checkpath
-
-    if dir_path == "/":
-        return make_response(jsonify({
-            "success": False}), 200)
-
-    success = create_directory_helper(request_obj["path"])
-    if success is None:
-        return make_response(jsonify({
-            "exception_type": "FileNotFoundException",
-            "exception_info": "parent directory does not exist."
-        }), 404)
-
-    return make_response(jsonify({
-        "success": success}), 200)
-
-
-def create_directory_helper(path):
-    path_list = path.split("/")
-    clean_list = list()
-    clean_list.append(path_list[0])
-    for i in range(1, len(path_list)):
-        if not (path_list[i] == ''):
-            clean_list.append(path_list[i])
-    dir_elem = clean_list[-1]
-
-    root = system_root
-    for directory in clean_list[:-1]:
-        if directory not in root and not (directory == ''):
-            return None
-        root = root[directory]
-
-    if dir_elem in root:
-        return False
-    if "files" in root and dir_elem in root["files"]:
-        return False
-    root[dir_elem] = dict()
-    return True
-
-
-@service_api.route('/create_file', methods=['POST'])
-def create_file():
-    request_obj = request.json
-    dir_path = request_obj["path"]
-
+    # IllegalArgumentException
     checkpath = path_invalid(dir_path)
     if checkpath != "valid":
         return checkpath
 
     if dir_path == "/":
         return make_response(jsonify({"success": False}), 200)
-    success = create_file_helper(request_obj["path"])
 
+    success = create_directory_helper(requested_content["path"])
+
+    # FileNotFoundException
     if success is None:
         return make_response(jsonify({
             "exception_type": "FileNotFoundException",
             "exception_info": "parent directory does not exist."
-        }), 404)
-
-    if success:
-        all_storageserver_files.add(request_obj["path"])
+        }), 400)
 
     return make_response(jsonify({"success": success}), 200)
 
 
-def create_file_helper(path):
-    path_list = path.split("/")
-    clean_list = list()
-    clean_list.append(path_list[0])
-    for i in range(1, len(path_list)):
-        if not (path_list[i] == ''):
-            clean_list.append(path_list[i])
-    path_elem = clean_list[-1]
-    file_path = {"path": path}
+def create_directory_helper(path):
+    path_list = path_cleaner(path)
+    dir_name = path_list[-1]
 
     root = system_root
-    for directory in clean_list[:-1]:
+    for directory in path_list[:-1]:
+        if directory not in root and not (directory == ''):
+            return None
+        root = root[directory]
+
+    # dir already exists
+    # dirname is a file
+    if (dir_name in root) or ("files" in root and dir_name in root["files"]):
+        return False
+
+    # create directory
+    root[dir_name] = dict()
+    return True
+
+
+@service_api.route('/create_file', methods=['POST'])
+def create_file():
+    requested_content = request.json
+    requested_path = requested_content["path"]
+
+    # IllegalArgumentException
+    checkpath = path_invalid(requested_path)
+    if checkpath != "valid":
+        return checkpath
+
+    if requested_path == "/":
+        return make_response(jsonify({"success": False}), 200)
+
+    success = create_file_helper(requested_content["path"])
+
+    # FileNotFoundException
+    if success is None:
+        return make_response(jsonify({
+            "exception_type": "FileNotFoundException",
+            "exception_info": "parent directory does not exist."
+        }), 400)
+
+    if success:
+        all_storageserver_files.add(requested_content["path"])
+
+    return make_response(jsonify({"success": success}), 200)
+
+"""
+ref https://stackoverflow.com/questions/16877422/whats-the-best-way-to-parse-a-json-response-from-the-requests-library
+"""
+def create_file_helper(path):
+    path_list = path_cleaner(path)
+    file_name = path_list[-1]
+
+    root = system_root
+    for directory in path_list[:-1]:
         if directory not in root and not (directory == ''):
             return None
         if directory not in root and directory == '':
             root[directory] = dict()
         root = root[directory]
 
-    if path_elem in root:
-        return False
-    if "files" in root and path_elem in root["files"]:
+    # file already exists
+    if (file_name in root) or ("files" in root and file_name in root["files"]):
         return False
 
-    resp = requests.post("http://localhost:" + str(registered_storageserver[0].command_port) + "/storage_create",
-                         json=file_path)
-    response_json = json.loads(resp.text)
+    # send request to "http://localhost:command_port/storage_create"
+    command_port = str(registered_storageserver[0].command_port)
+    response = json.loads(
+        requests.post("http://localhost:" + command_port + "/storage_create",
+                      json={"path": path}).text
+    )
 
-    if response_json["success"]:
+    success = response["success"]
+
+    # if success create file
+    if success:
         if "files" not in root:
-            root["files"] = [path_elem]
-            file_node = FileNode(path_elem)
-            root["file_nodes"] = [file_node]
+            root["files"] = [file_name]
+            root["fileleaf"] = list([FileLeaf(file_name)])
         else:
-            root["files"].append(path_elem)
-            file_node = FileNode(path_elem)
-            root["file_nodes"] = [file_node]
-        return True
-    else:
-        return False
+            root["files"].append(file_name)
+            root["fileleaf"] = list([FileLeaf(file_name)])
+
+    return success
 
 
 def get_storage_info(path_to_find):
     for storageserver in storageserver_file_map:
         if path_to_find in storageserver_file_map[storageserver]:
             return storageserver
-    return None, None
+    return (None, None)
 
 
 def path_invalid(dir_path):
     if len(dir_path) == 0:
         return make_response(jsonify({
             "exception_type": "IllegalArgumentException",
-            "exception_info": "Provided empty path"
-        }), 404)
+            "exception_info": "path can not be None"
+        }), 400)
     if not (dir_path[0] == '/') or ':' in dir_path:
         return make_response(jsonify({
             "exception_type": "IllegalArgumentException",
-            "exception_info": "Invalid path"
-        }), 404)
+            "exception_info": "path has invalid format"
+        }), 400)
     return "valid"
+
+@service_api.route('/delete', methods=['POST'])
+def delete_file():
 
 
 def start_service_api():
