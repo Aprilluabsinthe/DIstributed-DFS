@@ -30,3 +30,14 @@ class ClientHost:
 
     def get_client_port(self):
         return self.client_port
+
+
+class LockRequestQueue:
+    shared_counter = 0
+    queue = list()
+    queue_size = 0
+
+    def __init__(self):
+        self.shared_counter = 0
+        self.queue = list()
+        self.queue_size = 0
