@@ -3,26 +3,48 @@ from threading import Thread, Condition, RLock
 from threading import Event
 import requests
 from Registration import Registration, ClientHost, LockRequestQueue
-from FileLeaf import FileLeaf
+from FileLeaf import FileLeaf, DirLockReport
 from collections import defaultdict
 
 from FileLock import FileLock
 
-all_storageserver_files = set()
-storageserver_file_map = defaultdict(set)
-file_server_map = defaultdict(tuple)
 
-replica_report = defaultdict(dict)
-
-registered_storageserver = list()
+"""
+member variables
+"""
+# system_root dictionary
 system_root = dict()
 root_report = dict()
 system_root[''] = dict()
 
-lock_queue_report = LockRequestQueue()
+# for register and globla storage
+all_storageserver_files = set()
+storageserver_file_map = defaultdict(set)
+file_server_map = defaultdict(tuple)
+registered_storageserver = list()
 
+# for replica
+replica_report = defaultdict(dict)
+
+# for queueing and locking
+lock_queue_report = LockRequestQueue()
 exclusive_wait_queue = list()
 
+
+"""
+****************************************** start of functions ******************************************
+
+****************************************** start of functions ******************************************
+"""
+
+
+
+
+"""
+******************************************** registration API ********************************************
+
+******************************************** registration API ********************************************
+"""
 registration_api = Flask('registration_api')
 
 
@@ -33,8 +55,6 @@ def register_server():
     If success, return a list of duplicate files to delete on the local storage of the registering storage server.
     ref: https://stackoverflow.com/questions/20001229/how-to-get-posted-json-in-flask
     """
-    # try:
-    #     lock_root(exclusive=True)
     request_content = request.json
 
     requested_storageserver = Registration(request_content["storage_ip"], request_content["client_port"],
@@ -49,14 +69,10 @@ def register_server():
 
     # no duplicate, return duplicate files
     duplicate_files = find_duplicate_files(requested_storageserver)
-    duplicate_files = add_files(requested_storageserver, duplicate_files)
-
-    registered_storageserver.append(requested_storageserver)
+    duplicate_files = add_files_and_storageservers(requested_storageserver, duplicate_files)
     return make_response(jsonify({
         "files": duplicate_files
     }), 200)
-    # finally:
-    #     unlock_root()
 
 
 def find_duplicate_files(requested_storageserver):
@@ -85,12 +101,28 @@ def to_parent_dir(filepath):
     return dir
 
 
-def add_files(requested_storageserver, duplicate_files):
+def to_parent_path(filepath):
+    file_path = filepath.split("/")
+    file_dir_name = file_path[-1]
+    lenname = len(file_dir_name)
+    return filepath[:-1 - lenname]
+
+
+def add_files_and_storageservers(requested_storageserver, duplicate_files):
     # construct file dictionary tree
     # example: system_root = {"tmp":{"dist-systems-0"} for /tmp/dist-systems-0
     construct_file_tree(requested_storageserver.files)
+    # add new files to it's directory
+    duplicate_files = add_file_to_directory(requested_storageserver, duplicate_files)
+    # add requested_storageserver to map
+    duplicate_files = add_storageserver_to_map(requested_storageserver, duplicate_files)
+    # add requested_storageserver to registered_storageserver set
+    registered_storageserver.append(requested_storageserver)
+    return duplicate_files
 
-    # dive into the file root
+
+def add_file_to_directory(requested_storageserver, duplicate_files):
+    # dive into the parent root
     for singlefile in requested_storageserver.files:
         file_path = singlefile.split("/")
         filename = file_path[-1]
@@ -108,9 +140,10 @@ def add_files(requested_storageserver, duplicate_files):
                 dir["files"] = list([filename])
                 dir["fileleaf"] = list([FileLeaf(filename)])
                 dir["filelock"] = list([FileLock(filename)])
+    return duplicate_files
 
-    # get file to add
-    # get file in requested_storageserver but not in duplicate files
+
+def add_storageserver_to_map(requested_storageserver, duplicate_files):
     add_list = [file for file in requested_storageserver.files if (file not in duplicate_files)]
     # update all_storageserver_files set using union
     all_storageserver_files.update(set(add_list))
@@ -122,8 +155,16 @@ def add_files(requested_storageserver, duplicate_files):
     for file in set(requested_storageserver.files).union(set(add_list)):
         if file not in file_server_map:
             file_server_map[file] = (requested_storageserver.storage_ip, requested_storageserver.client_port)
+
     return duplicate_files
 
+
+
+"""
+******************************************** service API ********************************************
+
+******************************************** service API ********************************************
+"""
 
 service_api = Flask('service_api')
 
@@ -228,9 +269,8 @@ def list_helper(path):
     if "files" in dir:
         list_contents.extend(dir["files"])
 
-    dir_keys = dir.keys()
-    keys_to_remove = ["files", "fileleaf", "filelock"]
-    keys_to_append = [key for key in dir_keys if key not in keys_to_remove]
+    keys_to_append = [key for key in dir.keys() if key not in ["files", "fileleaf", "filelock"]]
+
     list_contents.extend(keys_to_append)
     return list_contents
 
@@ -451,11 +491,11 @@ def create_file_helper(path):
         if "files" not in root:
             root["files"] = [file_name]
             root["fileleaf"] = list([FileLeaf(file_name)])
-            root["filelock"] = list([FileLock(file_name)])
+            root["RWlock"] = list([FileLock(file_name)])
         else:
             root["files"].append(file_name)
             root["fileleaf"].append(FileLeaf(file_name))
-            root["filelock"].append(FileLock(file_name))
+            root["RWlock"].append(FileLock(file_name))
 
     return success
 
@@ -529,9 +569,9 @@ def lock_path():
 
 def lock_root_operation(exclusive=True):
     requested_path = "/"
-    mutex, can_lock = acquire_lock_and_ability(is_root=True, exclusive_lock=exclusive)
+    filelock, can_lock = acquire_lock_and_ability(is_root=True, exclusive_lock=exclusive)
 
-    if not mutex:  # never be locked
+    if not filelock:  # never be locked
         if not exclusive and can_lock:
             lock_queue_report.shared_counter += 1
     else:  # has locking report
@@ -544,15 +584,15 @@ def lock_root_operation(exclusive=True):
         # queueing design
         if not can_direct_lock:  # lock_queue_report.queue_size > 0 or not can_lock
             if exclusive and lock_queue_report.shared_counter > 0:  # can not operate exclusive lock, should queue
-                lock_request = (mutex, requested_path, exclusive)
+                lock_request = (filelock, requested_path, exclusive)
                 exclusive_wait_queue.append(lock_request)
             else:  # can operate exclusive lock
                 if len(
                         exclusive_wait_queue) == lock_queue_report.queue_size:  # if all the queueing request are all exclusive
-                    mutex = Event()
+                    filelock = Event()
                 elif lock_queue_report.queue:  # use last lock
-                    mutex = lock_queue_report.queue[-1][0]
-                lock_request = (mutex, requested_path, exclusive)
+                    filelock = lock_queue_report.queue[-1][0]
+                lock_request = (filelock, requested_path, exclusive)
 
             # append to global queue and wait
             lock_queue_report.queue.append(lock_request)
@@ -605,23 +645,23 @@ def lock_file_operation(path, exclusive):
 
 
 def add_and_wait(path, exclusive_lock):
-    mutex, can_lock = acquire_lock_and_ability(path=path, exclusive_lock=exclusive_lock)
+    filelock, can_lock = acquire_lock_and_ability(path=path, exclusive_lock=exclusive_lock)
 
-    if mutex is None and not can_lock:
+    if filelock is None and not can_lock:
         return False
 
     can_direct_lock = (lock_queue_report.queue_size == 0 and can_lock)
 
     if not can_direct_lock:
-        if mutex:
-            lock_request = (mutex, path, exclusive_lock)
+        if filelock:
+            lock_request = (filelock, path, exclusive_lock)
             lock_queue_report.queue.append(lock_request)
             lock_queue_report.queue_size += 1
             lock_request[0].wait()
         else:
             queued_lock_request = lock_queue_report.queue[0]
-            qmutex, qcan_lock = acquire_lock_and_ability(path=queued_lock_request[1],
-                                                         exclusive_lock=queued_lock_request[2])
+            qfilelock, qcan_lock = acquire_lock_and_ability(path=queued_lock_request[1],
+                                                            exclusive_lock=queued_lock_request[2])
             if not qcan_lock:
                 return True
     return True
@@ -632,8 +672,9 @@ def check_upper_dir_locker(path):
     parent_dir = system_root
     for dir_name in path_list[:-1]:
         current_dir = parent_dir[dir_name]
-        if ("locked" in current_dir) and (current_dir["exclusive"]):
-            return current_dir["mutex"], False
+        if ("dirlock" in current_dir) and current_dir["dirlock"].exclusive:
+            return current_dir["dirlock"].filelock, False
+
         parent_dir = parent_dir[dir_name]
     return None, True
 
@@ -650,15 +691,15 @@ def dir_lock_and_ability_helper(is_root=False, directory=None, dir_name=None, ex
 
     lock_report = system_root[''] if is_root else directory[dir_name]
     # no locking record, can be locked
-    if not lock_report or "locked" not in lock_report:
+    if not lock_report or "dirlock" not in lock_report:
         return None, True
 
     # has locking record, lock is exclusive
-    if lock_report["locked"] and (lock_report["exclusive"] or exclusive_lock):
-        return lock_report["mutex"], False
+    if lock_report["dirlock"].locked and (lock_report["dirlock"].exclusive or exclusive_lock):
+        return lock_report["dirlock"].filelock, False
 
     # has locking record, lock is shared
-    return (lock_report["mutex"] if is_root else None), True
+    return (lock_report["dirlock"].filelock if is_root else None), True
 
 
 def file_in_parent_directory(file_name, parent_dir):
@@ -680,7 +721,7 @@ def file_lock_and_ability_helper(parent_dir=None, file_name=None, exclusive_lock
         if file.file_name == file_name:
             if file.locked:
                 if file.exclusive or exclusive_lock:
-                    return file.mutex, False
+                    return file.filelock, False
                 else:
                     return None, True
             else:
@@ -715,19 +756,22 @@ def acquire_lock_and_ability(is_root=False, path=None, exclusive_lock=True):
 
 
 def do_lock(is_root=False, path=None, exclusive_lock=True):
-    mutex, can_lock = acquire_lock_and_ability(is_root, path, exclusive_lock)
+    filelock, can_lock = acquire_lock_and_ability(is_root, path, exclusive_lock)
     if not can_lock:
         return False
 
+    if path == "/":
+        is_root = True
+
     if is_root:
         root_report = system_root['']
-        if "mutex" not in root_report:
-            root_report["mutex"] = Event()
-            root_report["mutex"].clear()
-        elif (not root_report["locked"]) or (root_report["locked"] and not root_report["exclusive"]):
-            root_report["mutex"].clear()
-        root_report["locked"] = True
-        root_report["exclusive"] = exclusive_lock
+
+        if "dirlock" not in root_report:
+            root_report["dirlock"] = DirLockReport()
+            root_report["dirlock"].acquire(exclusive=exclusive_lock)
+        elif (not root_report["dirlock"].locked) or (root_report["dirlock"].locked and not root_report["dirlock"].exclusive):
+            root_report["dirlock"].acquire(exclusive=exclusive_lock)
+
         return True
     else:
         is_dir = is_directory_helper(path)
@@ -751,22 +795,37 @@ def lock_upper_dir(path):
 
     for dir_name in path_list[:-1]:
         child_dir = parent_dir[dir_name]
-        if "locked" not in child_dir:
-            child_dir["mutex"] = Event()
-        child_dir["mutex"].clear()
-        child_dir["locked"] = True
-        child_dir["exclusive"] = False
+
+        if "dirlock" not in child_dir:
+            child_dir["dirlock"] = DirLockReport()
+        child_dir["dirlock"].acquire(exclusive=False)
+
+        parent_dir = parent_dir[dir_name]
+
+
+def unlock_upper_dir(path):
+    path_list = path.split("/")
+    parent_dir = system_root
+
+    for dir_name in path_list[:-1]:
+        child_dir = parent_dir[dir_name]
+
+        if "dirlock" not in child_dir:
+            child_dir["dirlock"] = DirLockReport()
+
+        # TODO: check the locked flag
+        child_dir["dirlock"].release()
+
         parent_dir = parent_dir[dir_name]
 
 
 def lock_dirctory(dir_name, parent_dir, exclusive_lock):
     target_dir = parent_dir[dir_name]
-    if "locked" not in target_dir:
-        target_dir["mutex"] = Event()
-    if not target_dir["locked"]:
-        target_dir["mutex"].clear()
-        target_dir["locked"] = True
-        target_dir["exclusive"] = exclusive_lock
+
+    if "dirlock" not in target_dir:
+        target_dir["dirlock"] = DirLockReport()
+    if not target_dir["dirlock"].locked:
+        target_dir["dirlock"].acquire(exclusive=exclusive_lock)
     return True
 
 
@@ -777,9 +836,7 @@ def lock_file(file_name, parent_dir, exclusive_lock):
     for file in parent_dir["fileleaf"]:
         if file.file_name == file_name:
             if not file.locked:
-                file.mutex.clear()
-                file.locked = True
-                file.exclusive = exclusive_lock
+                file.acquire(exclusive_lock)
             return True
     return False
 
@@ -787,21 +844,20 @@ def lock_file(file_name, parent_dir, exclusive_lock):
 def do_unlock(is_root=False, path=None):
     if is_root:
         root_report = system_root['']
-        if "locked" not in root_report:
+        if "dirlock" not in root_report:
             return True
-        if not root_report["exclusive"]:
+        if not root_report["dirlock"].exclusive:
             lock_queue_report.shared_counter -= 1
         if lock_queue_report.shared_counter == 0:
-            root_report["locked"] = False
-            root_report["exclusive"] = False
             if exclusive_wait_queue:
-                mutex, dir_path, exclusive = exclusive_wait_queue.pop(0)
+                filelock, dir_path, exclusive = exclusive_wait_queue.pop(0)
             else:
                 if lock_queue_report.queue:
-                    mutex, dir_path, exclusive = lock_queue_report.queue[0]
+                    filelock, dir_path, exclusive = lock_queue_report.queue[0]
                 else:
-                    mutex = root_report["mutex"]
-            mutex.set()
+                    filelock = root_report["dirlock"].filelock
+            filelock.set()
+            root_report["dirlock"].set_status(locked=False, exclusive=False)
         return True
     else:
         is_dir = is_directory_helper(path)
@@ -821,23 +877,16 @@ def unlock_upper_dir(path):
     parent_dir = system_root
     for dir_name in path_list[:-1]:
         parent_dir = parent_dir[dir_name]
-        # if "locked" not in parent_dir:
-        # do nothing
-        if "locked" in parent_dir and parent_dir["locked"]:
-            parent_dir["mutex"].set()
-            parent_dir["exclusive"] = False
-            parent_dir["locked"] = False
-
+        if "dirlock" in parent_dir and parent_dir["dirlock"].locked:
+            parent_dir["dirlock"].release()
 
 def unlock_dirctory(dir_name, parent_dir):
     if not dir_in_parent_directory(dir_name, parent_dir):
         return False
 
     target_dir = parent_dir[dir_name]
-    if "locked" in target_dir and target_dir["locked"]:
-        target_dir["mutex"].set()
-        target_dir["exclusive"] = False
-        target_dir["locked"] = False
+    if "dirlock" in target_dir and target_dir["dirlock"].locked:
+        target_dir["dirlock"].release()
     return True
 
 
@@ -851,9 +900,7 @@ def unlock_file(file_name, parent_dir):
     for file in parent_dir["fileleaf"]:
         if file.file_name == file_name:
             if file.locked:
-                file.mutex.set()
-                file.locked = False
-                file.exclusive = False
+                file.release()
     return True
 
 
@@ -896,6 +943,8 @@ def delete_file():
 '''
 ref https://stackoverflow.com/questions/20001229/how-to-get-posted-json-in-flask
 '''
+
+
 def send_deletion_request(path, command_port):
     response = json.loads(
         requests.post("http://localhost:" + str(command_port) + "/storage_delete",
