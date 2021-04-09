@@ -1,3 +1,5 @@
+import concurrent
+import queue
 from random import random
 
 from flask import Flask, request, json, make_response, jsonify
@@ -895,8 +897,7 @@ def copy_from_storageserver(path):
         return False
 
     # start a new process of replication
-    # send_replica_request(path, LOCALHOST_IP, current_server_port, new_server_command_port)
-    Thread(target=send_replica_request,
+    Thread(target=replica_thread,
            args=(path, LOCALHOST_IP, current_server_port, new_server_command_port)).start()
     return True
 
@@ -906,6 +907,14 @@ def copy_from_storageserver(path):
 *server_ip*: IP of the storage server that hosting the file.  
 *server_port*: storage port of the storage server that hosting the file.  
 """
+
+
+def replica_thread(path, server_ip, server_port, command_port):
+    is_success = send_replica_request(path, server_ip, server_port, command_port)
+    if is_success:
+        replica_report[path].is_replicated = is_success
+        replica_report[path].command_ports.append(command_port)
+        replica_report[path].replicaed_times += 1
 
 
 def send_replica_request(path, server_ip, server_port, command_port):
@@ -919,26 +928,28 @@ def send_replica_request(path, server_ip, server_port, command_port):
                       json=request).text
     )
     is_success = response["success"]
-    if is_success:
-        replica_report[path].is_replicated = is_success
-        replica_report[path].command_ports.append(command_port)
-        replica_report[path].replicaed_times += 1
-    return
+    return is_success
 
 
 def delete_exclusive_replica(path):
     if replica_report[path].replicaed_times > 1:
         command_port = replica_report[path].command_ports[-1]
 
-        if any(elem is None for elem in [path,command_port]):
+        if any(elem is None for elem in [path, command_port]):
             return False
 
         # start a new process of delete
-        # send_delete_request(path, command_port)
-        Thread(target=send_delete_request,
+        Thread(target=delete_thread,
                args=(path, command_port)).start()
-        return True
     return True
+
+
+def delete_thread(path, command_port):
+    is_success = send_delete_request(path, command_port)
+    if is_success:
+        replica_report[path].is_replicated = False
+        replica_report[path].command_ports.pop()
+        replica_report[path].replicaed_times -= 1
 
 
 def send_delete_request(path, command_port):
@@ -948,11 +959,7 @@ def send_delete_request(path, command_port):
                       json=request)
     )
     is_success = response["success"]
-    if is_success:
-        replica_report[path].is_replicated = False
-        replica_report[path].command_ports.pop()
-        replica_report[path].replicaed_times -= 1
-    return
+    return is_success
 
 
 def find_replication_storageserver(path):
@@ -1033,17 +1040,18 @@ def unlock_file(file_name, parent_dir):
 
 @service_api.route('/unlock', methods=['POST'])
 def unlock_path():
-    request_obj = request.json
-    dir_path = request_obj["path"]
+    requested_content = request.json
+    dir_path = requested_content["path"]
 
     # IllegalArgumentException
     checkpath = path_invalid(dir_path)
     if checkpath != "valid":
         return checkpath
 
-    is_directory = is_directory_helper(dir_path)
+    is_dir = is_directory_helper(dir_path)
+    is_file = is_file_helper(dir_path)
 
-    if (dir_path not in all_storageserver_files) and (not is_directory):
+    if (dir_path not in all_storageserver_files) and (is_file or not is_dir):
         return make_response(jsonify({
             "exception_type": "IllegalArgumentException",
             "exception_info": "path cannot be found."
@@ -1058,14 +1066,68 @@ def unlock_path():
 
 
 """
+**Description**: Deletes a file or directory. 
 > The parent directory should be locked for exclusive access before this operation is performed.  
 """
 
 
 @service_api.route('/delete', methods=['POST'])
-def delete_file():
-    pass
+def delete_dir_or_file():
+    requested_content = request.json
+    requested_path = requested_content["path"]
 
+    # IllegalArgumentException
+    checkpath = path_invalid(requested_path)
+    if checkpath != "valid":
+        return checkpath
+
+    is_dir = is_directory_helper(requested_path)
+    is_file = is_file_helper(requested_path)
+
+    if (is_file or not is_dir) and (requested_path not in all_storageserver_files):
+        return make_response(jsonify({
+            "exception_type": "FileNotFoundException",
+            "exception_info": "File/path cannot be found."
+        }), 400)
+
+    if requested_path == "/":
+        return make_response(jsonify({"success": False}), 200)
+
+    parent_path = to_parent_path(requested_path)
+
+    if is_dir:
+        for filename in all_storageserver_files:
+            if requested_path in filename:
+                # /directory , is root
+                if parent_path == "":
+                    do_lock(is_root=True, exclusive_lock=True)
+                    delete_given_path(requested_path)
+                    replica_report[filename] = ReplicaReport()
+                    do_unlock(is_root=True)
+                else:
+                    do_lock(is_root=False, path=parent_path, exclusive_lock=True)
+                    delete_given_path(requested_path)
+                    replica_report[filename] = ReplicaReport()
+                    do_unlock(is_root=False, path=parent_path)
+    else:  # is file
+        if parent_path == "":
+            do_lock(is_root=True, exclusive_lock=True)
+            delete_given_path(requested_path)
+            replica_report[requested_path] = ReplicaReport()
+            do_unlock(is_root=True)
+        else:
+            do_lock(is_root=False, path=parent_path, exclusive_lock=True)
+            delete_given_path(requested_path)
+            replica_report[requested_path] = ReplicaReport()
+            do_unlock(is_root=False, path=parent_path)
+
+    return make_response(jsonify({"success": True}), 200)
+
+
+def delete_given_path(path):
+    for command_port in replica_report[path].command_ports:
+        success = send_delete_request(path, command_port)
+    return
 
 '''
 ref https://stackoverflow.com/questions/20001229/how-to-get-posted-json-in-flask
