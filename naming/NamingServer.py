@@ -1,13 +1,14 @@
+from random import random
+
 from flask import Flask, request, json, make_response, jsonify
 from threading import Thread, Condition, RLock
 from threading import Event
 import requests
-from Registration import Registration, ClientHost, LockRequestQueue
+from Registration import Registration, ClientHost, LockRequestQueue, ReplicaReport
 from FileLeaf import FileLeaf, DirLockReport
 from collections import defaultdict
 
 from FileLock import FileLock
-
 
 """
 member variables
@@ -24,21 +25,20 @@ file_server_map = defaultdict(tuple)
 registered_storageserver = list()
 
 # for replica
-replica_report = defaultdict(dict)
+replica_report = defaultdict(ReplicaReport)
 
 # for queueing and locking
 lock_queue_report = LockRequestQueue()
 exclusive_wait_queue = list()
 
+LOCALHOST_IP = "127.0.0.1"
+FREQUENT = 10
 
 """
 ****************************************** start of functions ******************************************
 
 ****************************************** start of functions ******************************************
 """
-
-
-
 
 """
 ******************************************** registration API ********************************************
@@ -118,6 +118,7 @@ def add_files_and_storageservers(requested_storageserver, duplicate_files):
     duplicate_files = add_storageserver_to_map(requested_storageserver, duplicate_files)
     # add requested_storageserver to registered_storageserver set
     registered_storageserver.append(requested_storageserver)
+    add_to_replica_report(requested_storageserver, duplicate_files)
     return duplicate_files
 
 
@@ -158,6 +159,20 @@ def add_storageserver_to_map(requested_storageserver, duplicate_files):
 
     return duplicate_files
 
+
+def add_to_replica_report(requested_storageserver, duplicate_files):
+    add_list = [file for file in requested_storageserver.files if (file not in duplicate_files)]
+    for file in add_list:
+        if file not in replica_report:
+            # replica_report[file] = ReplicaReport()
+            replica_report[file].command_ports = list()
+            replica_report[file].replicaed_times = 0
+            replica_report[file].visited_times = 1
+            replica_report[file].is_replicated = False
+
+        if requested_storageserver.command_port not in replica_report[file].command_ports:
+            replica_report[file].command_ports.append(requested_storageserver.command_port)
+            replica_report[file].replicaed_times += 1
 
 
 """
@@ -769,7 +784,8 @@ def do_lock(is_root=False, path=None, exclusive_lock=True):
         if "dirlock" not in root_report:
             root_report["dirlock"] = DirLockReport()
             root_report["dirlock"].acquire(exclusive=exclusive_lock)
-        elif (not root_report["dirlock"].locked) or (root_report["dirlock"].locked and not root_report["dirlock"].exclusive):
+        elif (not root_report["dirlock"].locked) or (
+                root_report["dirlock"].locked and not root_report["dirlock"].exclusive):
             root_report["dirlock"].acquire(exclusive=exclusive_lock)
 
         return True
@@ -786,7 +802,7 @@ def do_lock(is_root=False, path=None, exclusive_lock=True):
         if is_dir and dir_in_parent_directory(dir_or_file_name, parent_dir):
             return lock_dirctory(dir_or_file_name, parent_dir, exclusive_lock)
         elif file_in_parent_directory(dir_or_file_name, parent_dir):
-            return lock_file(dir_or_file_name, parent_dir, exclusive_lock)
+            return lock_file(dir_or_file_name, parent_dir, exclusive_lock, path)
 
 
 def lock_upper_dir(path):
@@ -829,7 +845,7 @@ def lock_dirctory(dir_name, parent_dir, exclusive_lock):
     return True
 
 
-def lock_file(file_name, parent_dir, exclusive_lock):
+def lock_file(file_name, parent_dir, exclusive_lock, path):
     if "fileleaf" not in parent_dir:
         return False
 
@@ -837,8 +853,119 @@ def lock_file(file_name, parent_dir, exclusive_lock):
         if file.file_name == file_name:
             if not file.locked:
                 file.acquire(exclusive_lock)
+                parent_dir["replica_report"] = replica_report[path]
+                replica_success = add_or_delete_replica(path, exclusive_lock)
             return True
     return False
+
+
+def should_start_new_replication(path, exclusive_lock):
+    return (not exclusive_lock) and \
+           (not replica_report[path].is_replicated) and \
+           (replica_report[path].visited_times >= FREQUENT)
+
+
+def should_delete_replication(path, exclusive_lock):
+    return (exclusive_lock) and \
+           (replica_report[path].is_replicated)
+
+
+def add_or_delete_replica(path, exclusive_lock):
+    if exclusive_lock:
+        if should_delete_replication(path, exclusive_lock):
+            return delete_exclusive_replica(path)
+    else:  # shared lock
+        replica_report[path].visited_times += 1
+        if should_start_new_replication(path, exclusive_lock):
+            return copy_from_storageserver(path)
+
+
+def copy_from_storageserver(path):
+    replica_report[path].visited_times = 1
+    # find the current hosting server
+    current_stroage_ip, current_server_port = get_storage_map(path)
+    current_command_port = replica_report[path].command_ports[0]
+    current_server = Registration(current_stroage_ip, current_server_port, current_command_port)
+
+    # find a differnt server to copy and replicate the request file
+    for storage_server in registered_storageserver:
+        if current_server.is_different_server(storage_server):
+            new_server_command_port = storage_server.command_port
+
+    if any(elem is None for elem in [path, LOCALHOST_IP, current_server_port, new_server_command_port]):
+        return False
+
+    # start a new process of replication
+    # send_replica_request(path, LOCALHOST_IP, current_server_port, new_server_command_port)
+    Thread(target=send_replica_request,
+           args=(path, LOCALHOST_IP, current_server_port, new_server_command_port)).start()
+    return True
+
+
+"""
+*path*: Path to the file to be copied.  
+*server_ip*: IP of the storage server that hosting the file.  
+*server_port*: storage port of the storage server that hosting the file.  
+"""
+
+
+def send_replica_request(path, server_ip, server_port, command_port):
+    request = {
+        "path": path,
+        "server_ip": server_ip,
+        "server_port": server_port,
+    }
+    response = json.loads(
+        requests.post("http://localhost:" + str(command_port) + "/storage_copy",
+                      json=request).text
+    )
+    is_success = response["success"]
+    if is_success:
+        replica_report[path].is_replicated = is_success
+        replica_report[path].command_ports.append(command_port)
+        replica_report[path].replicaed_times += 1
+    return
+
+
+def delete_exclusive_replica(path):
+    if replica_report[path].replicaed_times > 1:
+        command_port = replica_report[path].command_ports[-1]
+
+        if any(elem is None for elem in [path,command_port]):
+            return False
+
+        # start a new process of delete
+        # send_delete_request(path, command_port)
+        Thread(target=send_delete_request,
+               args=(path, command_port)).start()
+        return True
+    return True
+
+
+def send_delete_request(path, command_port):
+    request = {"path": path}
+    response = json.loads(
+        requests.post("http://localhost:" + str(command_port) + "/storage_delete",
+                      json=request)
+    )
+    is_success = response["success"]
+    if is_success:
+        replica_report[path].is_replicated = False
+        replica_report[path].command_ports.pop()
+        replica_report[path].replicaed_times -= 1
+    return
+
+
+def find_replication_storageserver(path):
+    current_stroage_ip, current_server_port = get_storage_map(path)
+    current_command_port = replica_report[path].command_ports[0]
+    current_server = Registration(current_stroage_ip, current_server_port, current_command_port)
+
+    # find a differnt server to copy and replicate the request file
+    for storage_server in registered_storageserver:
+        if current_server.is_different_server(storage_server):
+            candidate_command_port = storage_server.command_port
+    return current_server_port, candidate_command_port
 
 
 def do_unlock(is_root=False, path=None):
@@ -879,6 +1006,7 @@ def unlock_upper_dir(path):
         parent_dir = parent_dir[dir_name]
         if "dirlock" in parent_dir and parent_dir["dirlock"].locked:
             parent_dir["dirlock"].release()
+
 
 def unlock_dirctory(dir_name, parent_dir):
     if not dir_in_parent_directory(dir_name, parent_dir):
