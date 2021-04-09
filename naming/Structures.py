@@ -1,3 +1,8 @@
+import threading
+from threading import Event, Condition
+from RWLock import RWLock
+
+
 class Registration:
     storage_ip = None
     client_port = None
@@ -13,8 +18,9 @@ class Registration:
     def __eq__(self, other):
         return self.storage_ip == other.storage_ip and self.client_port == other.client_port and self.command_port == other.command_port and self.files == other.files
 
-    def is_different_server(self,other):
+    def is_different_server(self, other):
         return self.command_port != other.command_port
+
 
 class ClientHost:
     storage_ip = None
@@ -56,3 +62,50 @@ class ReplicaReport:
         replicaed_times = 0
         visited_times = 1
         is_replicated = False
+
+
+class FileLeaf:
+    file_name = None
+    locked = False
+    exclusive = False
+    filelock = None
+
+    def __init__(self, file_name, exclusive=None):
+        self.file_name = file_name
+        self.exclusive = exclusive
+        self.filelock = Event()
+
+    def acquire(self, file_name, exclusive=None):
+        self.filelock.clear()
+        self.locked = True
+        self.exclusive = exclusive
+
+    def release(self):
+        self.filelock.set()
+        self.locked = False
+        self.exclusive = False
+
+
+class DirLockReport:
+    filelock = None
+    locked = False
+    exclusive = False
+
+    def __init__(self, exclusive=None):
+        self.filelock = Event()
+        self.locked = False
+        self.exclusive = False
+
+    def acquire(self, exclusive=None):
+        self.filelock.clear()
+        self.locked = True
+        self.exclusive = exclusive
+
+    def release(self):
+        self.filelock.set()
+        self.locked = False
+        self.exclusive = False
+
+    def set_status(self, locked=None, exclusive=None):
+        self.locked = locked
+        self.exclusive = exclusive

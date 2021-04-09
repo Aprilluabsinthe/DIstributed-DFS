@@ -4,10 +4,9 @@ from flask import Flask, request, json, make_response, jsonify
 from threading import Thread, Condition, RLock
 from threading import Event
 import requests
-from Registration import Registration, ClientHost, LockRequestQueue, ReplicaReport
-from FileLeaf import FileLeaf, DirLockReport
-from collections import defaultdict
 
+from Structures import Registration, ClientHost, LockRequestQueue, ReplicaReport, FileLeaf, DirLockReport
+from collections import defaultdict
 from FileLock import FileLock
 
 """
