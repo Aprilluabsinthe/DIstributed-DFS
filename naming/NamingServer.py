@@ -1,5 +1,6 @@
 import concurrent
 import queue
+import sys
 from random import random
 
 from flask import Flask, request, json, make_response, jsonify
@@ -531,15 +532,23 @@ def get_filestorage_map(path_to_find):
 
 def path_invalid(dir_path):
     if not dir_path or len(dir_path) == 0:
-        return make_response(jsonify({
+        # return make_response(jsonify({
+        #     "exception_type": "IllegalArgumentException",
+        #     "exception_info": "path can not be None"
+        # }), 400)
+        return {
             "exception_type": "IllegalArgumentException",
             "exception_info": "path can not be None"
-        }), 400)
+        }, 400
     if not (dir_path[0] == '/') or ':' in dir_path:
-        return make_response(jsonify({
+        # return make_response(jsonify({
+        #     "exception_type": "IllegalArgumentException",
+        #     "exception_info": "path has invalid format"
+        # }), 400)
+        return {
             "exception_type": "IllegalArgumentException",
             "exception_info": "path has invalid format"
-        }), 400)
+        }, 400
     return "valid"
 
 
@@ -1095,43 +1104,67 @@ def delete_dir_or_file():
 
     parent_path = to_parent_path(requested_path)
 
-    if is_dir:
+    if parent_path == "":
         for filename in all_storageserver_files:
             if requested_path in filename:
-                # /directory , is root
-                if parent_path == "":
+                if is_dir:
                     do_lock(is_root=True, exclusive_lock=True)
                     delete_given_path(requested_path)
                     replica_report[filename] = ReplicaReport()
                     do_unlock(is_root=True)
                 else:
+                    do_lock(is_root=True, exclusive_lock=True)
+                    delete_given_path(requested_path)
+                    replica_report[requested_path] = ReplicaReport()
+                    do_unlock(is_root=True)
+    else:
+        if is_dir:
+            for filename in all_storageserver_files:
+                if requested_path in filename:
                     do_lock(is_root=False, path=parent_path, exclusive_lock=True)
                     delete_given_path(requested_path)
                     replica_report[filename] = ReplicaReport()
                     do_unlock(is_root=False, path=parent_path)
-    else:  # is file
-        if parent_path == "":
-            do_lock(is_root=True, exclusive_lock=True)
-            delete_given_path(requested_path)
-            replica_report[requested_path] = ReplicaReport()
-            do_unlock(is_root=True)
         else:
             do_lock(is_root=False, path=parent_path, exclusive_lock=True)
             delete_given_path(requested_path)
             replica_report[requested_path] = ReplicaReport()
             do_unlock(is_root=False, path=parent_path)
-
     return make_response(jsonify({"success": True}), 200)
+    # if is_dir:
+    #     for filename in all_storageserver_files:
+    #         if requested_path in filename:
+    #             # /directory , is root
+    #             if parent_path == "":
+    #                 do_lock(is_root=True, exclusive_lock=True)
+    #                 delete_given_path(requested_path)
+    #                 replica_report[filename] = ReplicaReport()
+    #                 do_unlock(is_root=True)
+    #             else:
+    #                 do_lock(is_root=False, path=parent_path, exclusive_lock=True)
+    #                 delete_given_path(requested_path)
+    #                 replica_report[filename] = ReplicaReport()
+    #                 do_unlock(is_root=False, path=parent_path)
+    # else:  # is file
+    #     # /file
+    #     if parent_path == "":
+    #         do_lock(is_root=True, exclusive_lock=True)
+    #         delete_given_path(requested_path)
+    #         replica_report[requested_path] = ReplicaReport()
+    #         do_unlock(is_root=True)
+    #     else:
+    #         do_lock(is_root=False, path=parent_path, exclusive_lock=True)
+    #         delete_given_path(requested_path)
+    #         replica_report[requested_path] = ReplicaReport()
+    #         do_unlock(is_root=False, path=parent_path)
+
+    # return make_response(jsonify({"success": True}), 200)
 
 
 def delete_given_path(path):
     for command_port in replica_report[path].command_ports:
         success = send_delete_request(path, command_port)
     return
-
-'''
-ref https://stackoverflow.com/questions/20001229/how-to-get-posted-json-in-flask
-'''
 
 
 def send_deletion_request(path, command_port):
@@ -1142,14 +1175,16 @@ def send_deletion_request(path, command_port):
     return response["success"]
 
 
-def start_registration_api():
-    registration_api.run(host='localhost', port=8090)
+def start_registration(port):
+    registration_api.run(host='localhost', port=int(port))
 
 
-def start_service_api():
-    service_api.run(host='localhost', port=8080)
+def start_service(port):
+    service_api.run(host='localhost', port=int(port))
 
 
 if __name__ == '__main__':
-    Thread(target=start_registration_api).start()
-    service_api.run(host='localhost', port=8080)
+    service_port = sys.argv[1]
+    registration_port = sys.argv[2]
+    Thread(target=start_registration, args=(registration_port,)).start()
+    start_service(service_port)
