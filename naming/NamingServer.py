@@ -10,7 +10,7 @@ import requests
 
 from Structures import Registration, ClientHost, LockRequestQueue, ReplicaReport, FileLeaf, DirLockReport
 from collections import defaultdict
-from FileLock import FileLock
+from filelock import FileLock
 
 """
 member variables

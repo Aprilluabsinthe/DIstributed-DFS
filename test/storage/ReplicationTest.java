@@ -126,7 +126,7 @@ public class ReplicationTest extends StorageTest
         catch(TestFailed e) { throw e; }
         catch(Throwable t)
         {
-            throw new TestFailed("unable to create new file by replication", t);
+            throw new TestFailed("unable to create new file by replication " + response.toString(), t);
         }
 
         // Check that the file copy has the correct size and contents.

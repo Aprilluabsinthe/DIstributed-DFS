@@ -225,23 +225,48 @@ def delete_file_helper(path):
 
 @storage_command_api.route('/storage_copy', methods=['POST'])
 def storage_copy_api():
+    sys.stdout = open('file', 'w')
     requested_content = request.json
     requested_path = requested_content["path"]
     server_port = requested_content["server_port"]
+    server_ip = requested_content["server_ip"]
+
+    print(requested_path)
+    print(server_port)
+    print(server_ip)
 
     check_path = path_invalid(requested_path)
     if check_path != "valid":
-        return check_path, 400
+        return make_response(jsonify(check_path), 400)
 
-    requested_size = request_for_size(path=requested_path, storage_port=server_port)
-    read_result = request_for_read(path=requested_path, offset=0, length=requested_size, storage_port=server_port)
+    requested_size = request_for_size(path=requested_path, server_ip=server_ip, storage_port=server_port)
 
+
+    if "exception_type" in requested_size:
+        return make_response(jsonify({
+            "exception_type": requested_size["exception_type"],
+            "exception_info": "invalid response from size request"
+        }), 404)
+
+    # "size" must exist here
+    print(requested_size["size"])
+    read_result = request_for_read(path=requested_path, offset=0, length=requested_size["size"], server_ip=server_ip, storage_port=server_port)
+
+    if "exception_type" in read_result:
+        return make_response(jsonify({
+            "exception_type": requested_size["exception_type"],
+            "exception_info": "invalid response from read request"
+        }), 404)
+
+    # "data" must exist here
+    print(read_result["data"])
     dst_path = generate_full_path(root_dir,requested_path)
+    print(dst_path)
     success_create = file_create_helper(dst_path)
 
     if success_create:
         try:
-            success_write = file_write_helper(dst_path, 0, read_result)
+            success_write = file_write_helper(dst_path, 0, read_result["data"])
         except:
             return make_response(jsonify({
                 "exception_type": "IOException",
@@ -253,6 +278,8 @@ def storage_copy_api():
     all_files_in_ss.update(set(update_all_files_record()))
 
     success = success_create and success_write
+
+    sys.stdout.close()
     return make_response(jsonify({"success": success}), 200)
 
 
@@ -282,7 +309,6 @@ def storage_size_api():
             "exception_type": "FileNotFoundException",
             "exception_info": "File/path cannot be found."
         }), 404)
-    return make_response(jsonify(response_obj), response_code)
 
 
 def get_size_helper(file_name):
@@ -290,13 +316,13 @@ def get_size_helper(file_name):
     return file_size
 
 
-def request_for_size(path, storage_port):
+def request_for_size(path, server_ip, storage_port):
     requested_content = {"path": path}
     response = json.loads(
-        requests.post("http://localhost:" + str(storage_port) + "/storage_size",
+        requests.post("http://" + server_ip + ":" + str(storage_port) + "/storage_size",
                       json=requested_content).text
     )
-    return response["size"]
+    return response
 
 
 @storage_client_api.route('/storage_read', methods=['POST'])
@@ -342,17 +368,17 @@ def storage_read_api():
         }), 404)
 
 
-def request_for_read(path, offset, length, storage_port):
+def request_for_read(path, offset, length, server_ip, storage_port):
     requested_content = {
         "path": path,
         "offset": offset,
         "length": length
     }
     response = json.loads(
-        requests.post("http://localhost:" + str(storage_port) + "/storage_read",
+        requests.post("http://" + server_ip + ":" + str(storage_port) + "/storage_read",
                       json=requested_content)
     )
-    return response['data']
+    return response
 
 
 def file_read_helper(file_name, offset, length):

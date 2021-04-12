@@ -1,6 +1,6 @@
 import threading
 from threading import Event, Condition
-from RWLock import RWLock
+from naming.RWLock import RWLock
 
 
 class FileLeaf:
