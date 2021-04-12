@@ -8,9 +8,8 @@ from threading import Thread, Condition, RLock
 from threading import Event
 import requests
 
-from Structures import Registration, ClientHost, LockRequestQueue, ReplicaReport, FileLeaf, DirLockReport
+from Structures import Registration, ClientHost, LockRequestQueue, ReplicaReport, FileLeaf, DirLockReport, FileLock
 from collections import defaultdict
-from FileLock import FileLock
 
 """
 member variables
@@ -138,11 +137,9 @@ def add_file_to_directory(requested_storageserver, duplicate_files):
             if "files" in dir:
                 dir["files"].append(filename)
                 dir["fileleaf"].append(FileLeaf(filename))
-                dir["filelock"].append(FileLock(filename))
             else:
                 dir["files"] = list([filename])
                 dir["fileleaf"] = list([FileLeaf(filename)])
-                dir["filelock"] = list([FileLock(filename)])
     return duplicate_files
 
 
@@ -185,16 +182,15 @@ def add_to_replica_report(requested_storageserver, duplicate_files):
 
 service_api = Flask('service_api')
 
-"""
-The path string should be a sequence of components delimited with forward slashes. 
-Empty components are dropped.
-The string must begin with a forward slash.
- And the string must not contain any colon character.
-"""
-
 
 @service_api.route('/is_valid_path', methods=['POST'])
 def is_valid_path():
+    """
+    The path string should be a sequence of components delimited with forward slashes.
+    Empty components are dropped.
+    The string must begin with a forward slash.
+    And the string must not contain any colon character.
+    """
     request_content = request.json
     checkpath = path_invalid(request_content['path'])
     if checkpath == "valid":
@@ -212,6 +208,11 @@ def is_valid_path():
 
 @service_api.route('/getstorage', methods=['POST'])
 def get_storage():
+    """
+    If the client intends to perform calls only to `read` or `size` after obtaining the storage server stub,
+    it should lock the file for shared access before making this call.
+    If it intends to perform calls to `write`, it should lock the file for exclusive access.
+    """
     request_content = request.json
     stroage_ip, server_port = get_storage_map(request_content["path"])
     # stroage_ip,server_port = get_filestorage_map(request_content["path"])
@@ -286,7 +287,7 @@ def list_helper(path):
     if "files" in dir:
         list_contents.extend(dir["files"])
 
-    keys_to_append = [key for key in dir.keys() if key not in ["files", "fileleaf", "filelock"]]
+    keys_to_append = [key for key in dir.keys() if key not in ["files", "fileleaf"]]
 
     list_contents.extend(keys_to_append)
     return list_contents
@@ -508,11 +509,9 @@ def create_file_helper(path):
         if "files" not in root:
             root["files"] = [file_name]
             root["fileleaf"] = list([FileLeaf(file_name)])
-            root["RWlock"] = list([FileLock(file_name)])
         else:
             root["files"].append(file_name)
             root["fileleaf"].append(FileLeaf(file_name))
-            root["RWlock"].append(FileLock(file_name))
 
     return success
 
@@ -532,23 +531,15 @@ def get_filestorage_map(path_to_find):
 
 def path_invalid(dir_path):
     if not dir_path or len(dir_path) == 0:
-        # return make_response(jsonify({
-        #     "exception_type": "IllegalArgumentException",
-        #     "exception_info": "path can not be None"
-        # }), 400)
         return {
-            "exception_type": "IllegalArgumentException",
-            "exception_info": "path can not be None"
-        }, 400
+                   "exception_type": "IllegalArgumentException",
+                   "exception_info": "path can not be None"
+               }, 400
     if not (dir_path[0] == '/') or ':' in dir_path:
-        # return make_response(jsonify({
-        #     "exception_type": "IllegalArgumentException",
-        #     "exception_info": "path has invalid format"
-        # }), 400)
         return {
-            "exception_type": "IllegalArgumentException",
-            "exception_info": "path has invalid format"
-        }, 400
+                   "exception_type": "IllegalArgumentException",
+                   "exception_info": "path has invalid format"
+               }, 400
     return "valid"
 
 
@@ -797,7 +788,6 @@ def do_lock(is_root=False, path=None, exclusive_lock=True):
         elif (not root_report["dirlock"].locked) or (
                 root_report["dirlock"].locked and not root_report["dirlock"].exclusive):
             root_report["dirlock"].acquire(exclusive=exclusive_lock)
-
         return True
     else:
         is_dir = is_directory_helper(path)
@@ -1083,6 +1073,13 @@ def unlock_path():
 @service_api.route('/delete', methods=['POST'])
 def delete_dir_or_file():
     requested_content = request.json
+
+    if requested_content["path"] is None:
+        return make_response(jsonify({
+            "exception_type": "IllegalArgumentException",
+            "exception_info": "required arguments missing."
+        }), 400)
+
     requested_path = requested_content["path"]
 
     # IllegalArgumentException
@@ -1093,78 +1090,57 @@ def delete_dir_or_file():
     is_dir = is_directory_helper(requested_path)
     is_file = is_file_helper(requested_path)
 
-    if (is_file or not is_dir) and (requested_path not in all_storageserver_files):
-        return make_response(jsonify({
-            "exception_type": "FileNotFoundException",
-            "exception_info": "File/path cannot be found."
-        }), 400)
-
-    if requested_path == "/":
+    if requested_path == "/" or requested_path == "":
         return make_response(jsonify({"success": False}), 200)
 
+    if (requested_path not in all_storageserver_files) and (is_file or not is_dir):
+        return make_response(jsonify({
+            "exception_type": "FileNotFoundException",
+            "exception_info": "path cannot be found."
+        }), 400)
+
     parent_path = to_parent_path(requested_path)
+    parent_dir = to_parent_dir(requested_path)
+    file_or_dir_name = requested_path.split("/")[-1]
+    is_root = True if (parent_path == "") else False
 
-    if parent_path == "":
-        for filename in all_storageserver_files:
-            if requested_path in filename:
-                if is_dir:
-                    do_lock(is_root=True, exclusive_lock=True)
-                    delete_given_path(requested_path)
-                    replica_report[filename] = ReplicaReport()
-                    do_unlock(is_root=True)
-                else:
-                    do_lock(is_root=True, exclusive_lock=True)
-                    delete_given_path(requested_path)
-                    replica_report[requested_path] = ReplicaReport()
-                    do_unlock(is_root=True)
+    if is_dir:
+        for file in all_storageserver_files:
+            if file.find(requested_path) != -1:
+                do_lock(is_root=is_root, path=parent_path, exclusive_lock=True)
+                delete_given_path(file, requested_path)
+                do_unlock(is_root=is_root, path=parent_path)
+                all_storageserver_files.remove(file)
+        del parent_dir[file_or_dir_name]
     else:
-        if is_dir:
-            for filename in all_storageserver_files:
-                if requested_path in filename:
-                    do_lock(is_root=False, path=parent_path, exclusive_lock=True)
-                    delete_given_path(requested_path)
-                    replica_report[filename] = ReplicaReport()
-                    do_unlock(is_root=False, path=parent_path)
-        else:
-            do_lock(is_root=False, path=parent_path, exclusive_lock=True)
-            delete_given_path(requested_path)
-            replica_report[requested_path] = ReplicaReport()
-            do_unlock(is_root=False, path=parent_path)
+        do_lock(is_root=is_root, path=parent_path, exclusive_lock=True)
+        delete_given_path(requested_path, requested_path)
+        do_unlock(is_root=is_root, path=parent_path)
+        completely_delete_file(requested_path)
+
     return make_response(jsonify({"success": True}), 200)
-    # if is_dir:
-    #     for filename in all_storageserver_files:
-    #         if requested_path in filename:
-    #             # /directory , is root
-    #             if parent_path == "":
-    #                 do_lock(is_root=True, exclusive_lock=True)
-    #                 delete_given_path(requested_path)
-    #                 replica_report[filename] = ReplicaReport()
-    #                 do_unlock(is_root=True)
-    #             else:
-    #                 do_lock(is_root=False, path=parent_path, exclusive_lock=True)
-    #                 delete_given_path(requested_path)
-    #                 replica_report[filename] = ReplicaReport()
-    #                 do_unlock(is_root=False, path=parent_path)
-    # else:  # is file
-    #     # /file
-    #     if parent_path == "":
-    #         do_lock(is_root=True, exclusive_lock=True)
-    #         delete_given_path(requested_path)
-    #         replica_report[requested_path] = ReplicaReport()
-    #         do_unlock(is_root=True)
-    #     else:
-    #         do_lock(is_root=False, path=parent_path, exclusive_lock=True)
-    #         delete_given_path(requested_path)
-    #         replica_report[requested_path] = ReplicaReport()
-    #         do_unlock(is_root=False, path=parent_path)
-
-    # return make_response(jsonify({"success": True}), 200)
 
 
-def delete_given_path(path):
+def delete_given_path(path, file_or_dir):
     for command_port in replica_report[path].command_ports:
-        success = send_delete_request(path, command_port)
+        send_deletion_request(file_or_dir, command_port)
+    # clear replica_report by initialize it
+    replica_report[path] = ReplicaReport()
     return
+
+
+def completely_delete_file(filepath):
+    file_list = filepath.split("/")
+    file_name = file_list[-1]
+    parent_dir = to_parent_dir(filepath)
+
+    if "files" in parent_dir and file_name in parent_dir["files"]:
+        parent_dir["files"].remove(file_name)
+        for file in parent_dir["fileleaf"]:
+            if file.file_name == file_name:
+                parent_dir["fileleaf"].remove(file)
+
+    all_storageserver_files.remove(filepath)
 
 
 def send_deletion_request(path, command_port):
@@ -1175,12 +1151,12 @@ def send_deletion_request(path, command_port):
     return response["success"]
 
 
-def start_registration(port):
-    registration_api.run(host='localhost', port=int(port))
+def start_registration(registration_port):
+    registration_api.run(host='localhost', port=int(registration_port))
 
 
-def start_service(port):
-    service_api.run(host='localhost', port=int(port))
+def start_service(service_port):
+    service_api.run(host='localhost', port=int(service_port))
 
 
 if __name__ == '__main__':
