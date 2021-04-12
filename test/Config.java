@@ -37,8 +37,8 @@ public class Config {
      * REGISTRATION port, and "/tmp/dist-systems-0" is for ROOT_DIR.
      * You should follow the order as the example shows.
     */
-    public static final String startStorage0 = String.format("python3 " +
-            "storage/StorageServer.py 7000 7001 8090 /tmp/dist-systems-0", separator);
+    public static final String startStorage0 = String.format("java -cp .%sgson-2.8.6.jar " +
+            "storage/StorageServer 7000 7001 8090 /tmp/dist-systems-0", separator);
 
     /**
      * Command to start the second storage server.
@@ -53,6 +53,6 @@ public class Config {
      * REGISTRATION port, and "/tmp/dist-systems-1" is for ROOT_DIR.
      * You should follow the order as the example shows.
     */
-    public static final String startStorage1 = String.format("python3 "  +
-            "storage/StorageServer.py 7010 7011 8090 /tmp/dist-systems-1", separator);
+    public static final String startStorage1 = String.format("java -cp .%sgson-2.8.6.jar " +
+            "storage/StorageServer 7010 7011 8090 /tmp/dist-systems-1", separator);
 }

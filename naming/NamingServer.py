@@ -1110,7 +1110,7 @@ def delete_dir_or_file():
                 do_lock(is_root=is_root, path=parent_path, exclusive_lock=True)
                 delete_given_path(file, requested_path)
                 do_unlock(is_root=is_root, path=parent_path)
-                all_storageserver_files.remove(file)
+                # all_storageserver_files.remove(file)
         del parent_dir[file_or_dir_name]
     else:
         do_lock(is_root=is_root, path=parent_path, exclusive_lock=True)
