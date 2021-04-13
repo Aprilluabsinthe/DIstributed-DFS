@@ -58,8 +58,8 @@ docs :
 .PHONY : docs-all
 docs-all :
 	javadoc -cp  ".$(CPSEPARATOR)$(JARFILE)" -link $(DOCLINK) -private -sourcepath \
-	     -d $(ALLDOCDIR) $(DFSPACKAGES) test test.common test.naming \
-		test.util build
+    	     -d $(ALLDOCDIR) $(DFSPACKAGES) test test.common test.naming \
+    		test.util build
 	pdoc --html -o $(NAMINGDIR) naming/NamingServer.py naming/Structures.py
 
 # Dependencies for the Makefile fragment reporting the classpath separator.
