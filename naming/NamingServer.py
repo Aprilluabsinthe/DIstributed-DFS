@@ -18,24 +18,67 @@ member variables
 """
 # system_root dictionary
 system_root = dict()
+"""
+the system root, a diction object
+"""
 root_report = dict()
 system_root[''] = dict()
+"""
+the root_report object, system_root[''] represents root dictionary
+
+**example**: /directory/file , system_root[''] represents for the "/"
+
+``system_root = {'':{'dirlock':DirLock()},'directory':{'files':[file], 'fileleaf':[FileLeaf(files)],'dirlock':DirLock()}}``
+"""
 
 # for register and globla storage
 all_storageserver_files = set()
+"""
+a set of all files stored in this naming serverm
+"""
 storageserver_file_map = defaultdict(set)
+"""
+mapping between storageserver and files
+"""
 file_server_map = defaultdict(tuple)
+"""
+mapping between files and storageserver
+"""
 registered_storageserver = list()
+"""
+a list of registered storage servers in this naming server
+"""
 
 # for replica
 replica_report = defaultdict(ReplicaReport)
+"""
+a dictionary of replica report storing ReplicaReport() objects
+
+``replica_report= {"file1":ReplicaReport(file1),"file2":ReplicaReport(file2)......}``
+"""
 
 # for queueing and locking
 lock_queue_report = LockRequestQueue()
+"""
+a structure of lock_queue_report for non-exclusive locks
+"""
+
 exclusive_wait_queue = list()
+"""
+a list of exclusive_wait_queue for exclusive locks
+"""
 
 LOCALHOST_IP = "127.0.0.1"
+"""
+IP for localhost
+"""
+
 FREQUENT = 10
+"""
+Magic number for replication
+the acumulated access time a file has been visited. If the access time is over FREQUENT, ensure one replication
+"""
+
 
 """
 ==================
@@ -49,7 +92,10 @@ registration_api = Flask('registration_api')
 @registration_api.route('/register', methods=['POST'])
 def register_server():
     """
-    :return: If success, return a list of duplicate files to delete on the local storage of the registering storage server.
+    **descripton**:the api for `/register`
+    
+    **returns**:
+        If success, return a list of duplicate files to delete on the local storage of the registering storage server.
 
     **request**:
         1. *storage_ip*: storage server IP address.
@@ -91,9 +137,11 @@ def register_server():
 
 def find_duplicate_files(requested_storageserver):
     """
-    :param requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
-    :return: a list of duplicate files which already exist in the naming server
-    Iterate all the files stored in the naming server, if the file in requested storage server already exists, add to duplicate file list
+    **description**: Iterate all the files stored in the naming server, if the file in requested storage server already exists, add to duplicate file list
+
+    **param**: requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
+
+    **return**: a list of duplicate files which already exist in the naming server
     """
     duplicate_files = []
     for file in requested_storageserver.files:
@@ -104,8 +152,9 @@ def find_duplicate_files(requested_storageserver):
 
 def construct_file_tree(files_to_construct):
     """
-    :param files_to_construct: the full path of a file
-    constructuring a dictionary structure by a full path of file name
+    **description** constructing a dictionary structure by a full path of file name
+    
+    **param** files_to_construct: the full path of a file
 
     **example**:
         ``directory1/directory1_1/file1``
@@ -122,8 +171,11 @@ def construct_file_tree(files_to_construct):
 
 def to_parent_dir(filepath):
     """
-    :param filepath: the full path of a file name
-    :return: turn to the parent directory
+    **description** : return to the parent directory of this filepath
+    
+    **param** : filepath: the full path of a file name
+    
+    **returns** turn to the parent directory
 
     **example**:
         directory1/directory1_1/file1
@@ -138,8 +190,11 @@ def to_parent_dir(filepath):
 
 def to_parent_path(filepath) -> str:
     """
-    :param filepath: the full path of a file name
-    :return: turn to the parent directory path
+    **description**: return to the string format parent directory of this filepath
+    
+    **param**: filepath: the full path of a file name
+    
+    **return**:  turn to the parent directory path
 
     **example**:
         directory1/directory1_1/file1, return to string "directory1/directory1_1"
@@ -152,10 +207,13 @@ def to_parent_path(filepath) -> str:
 
 def add_files_and_storageservers(requested_storageserver, duplicate_files):
     """
-    :param requested_storageserver: the requesting storageserver, containing storage_ip,client_port,command_port and files
-    :param duplicate_files: a list of duplicate files which already exist in the naming server
-    :return: updated list of duplicate files
+    **param**: requested_storageserver: the requesting storageserver, containing storage_ip,client_port,command_port and files
+    
+    **param**: duplicate_files: a list of duplicate files which already exist in the naming server
+    
+    **return**: updated list of duplicate files
 
+    **details**:
     construct file dictionary tree, find duplicate files, add non-duplicated new files to
         1. add non-duplicated new files to it's own directory
         2. add non-duplicated new files to naming server all files
@@ -180,9 +238,11 @@ def add_files_and_storageservers(requested_storageserver, duplicate_files):
 
 def add_file_to_directory(requested_storageserver, duplicate_files):
     """
-    :param requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
-    :param duplicate_files: a list of duplicate files which already exist in the naming server
-    :return: updated list of duplicate files
+    **param**: requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
+
+    **param**: duplicate_files: a list of duplicate files which already exist in the naming server
+
+    **return**: updated list of duplicate files
 
     Iterate through files in requesting storage server, add new files to it's directory
         1. store short file name in dir["files"]
@@ -215,9 +275,11 @@ def add_file_to_directory(requested_storageserver, duplicate_files):
 
 def add_storageserver_to_map(requested_storageserver, duplicate_files):
     """
-    :param requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
-    :param duplicate_files: a list of duplicate files which already exist in the naming server
-    :return: updated list of duplicate files
+    **param**: requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
+    
+    **param**: duplicate_files: a list of duplicate files which already exist in the naming server
+    
+    **returns**: updated list of duplicate files
 
     **Implementation**:
         1. store ``requesting storage server - file`` mapping into naming server,
@@ -245,11 +307,13 @@ def add_storageserver_to_map(requested_storageserver, duplicate_files):
 
 def add_to_replica_report(requested_storageserver, duplicate_files):
     """
-    :param requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
-    :param duplicate_files: a list of duplicate files which already exist in the naming server
-    :return: updated list of duplicate files
+    **param**: requested_storageserver: the requested storageserver, containing storage_ip,client_port,command_port and files
+    
+    **param**: duplicate_files: a list of duplicate files which already exist in the naming server
+    
+    **return**: updated list of duplicate files
 
-    generate initial replica report for files.The file are get by requested storage server files differentiate the duplicate files
+    **details**: generate initial replica report for files.The file are get by requested storage server files differentiate the duplicate files
 
     only files can be replicated, structure is  ``ReplicaReport``, which stores
         1. a list of storage server(AKA command_ports) which have this file replication
@@ -284,11 +348,11 @@ service_api = Flask('service_api')
 @service_api.route('/is_valid_path', methods=['POST'])
 def is_valid_path():
     """
-    :return: HTTP json response. `true` if the path is valid. `false` if the path is invalid. status code `200 OK`
+    **description**: the api for `/is_valid_path`. Given a Path string, return whether it is a valid path.
+    
+    **return**: HTTP json response. `true` if the path is valid. `false` if the path is invalid. status code `200 OK`
 
-    Given a Path string, return whether it is a valid path.
-
-    validation:
+    **validation**:
         1. The path string should be a sequence of components delimited with forward slashes.
         2. Empty components are dropped.
         3. The string must begin with a forward slash
@@ -313,11 +377,15 @@ def is_valid_path():
 @service_api.route('/getstorage', methods=['POST'])
 def get_storage():
     """
-    :return: response_1 {"server_ip":server_ip,"server_port":server_port},200
-    :exception FileNotFoundException: If the file does not exist.
-    :exception IllegalArgumentException: If the file does not exist.
+    **description**: api for `/getstorage`, Returns the IP and port info of the storage server that hosting the file.
+    
+    **return**: response_1 {"server_ip":server_ip,"server_port":server_port},200
+    
+    **exception** FileNotFoundException: If the file does not exist.
+    
+    **exception** IllegalArgumentException: If the file does not exist.
 
-    Returns the IP and port info of the storage server that hosting the file.
+    
     """
     request_content = request.json
 
@@ -351,10 +419,11 @@ def get_storage():
 
 def empty_path_cleaner(path):
     """
-    :param path: full name of a file name
-    :return: a list of cleaned path list containing each elements
-
-    a fucntion to drop Empty path components dropped. such as ``//file``
+    **description**: a fucntion to drop Empty path components dropped. such as ``//file``
+    
+    **param** path: full name of a file name
+    
+    **return** a list of cleaned path list containing each elements
     """
     path_list = path.strip().split("/")
     cleaner = [path_list[0]]
@@ -362,21 +431,16 @@ def empty_path_cleaner(path):
     return cleaner
 
 
-'''
-Lists the contents of a directory.
-> The directory should be locked for shared access before this operation is performed,
-> because this operation reads the directory's child list.  
-'''
-
-
 @service_api.route('/list', methods=['POST'])
 def list_contents():
     """
-    :exception FileNotFoundException: If the given path does not refer to a directory.
-    :exception IllegalArgumentException: If the given path is invalid.
-    :return: HTTP json response, {"files": file_list}), 200
+    **exception** FileNotFoundException: If the given path does not refer to a directory.
+    
+    **exception** IllegalArgumentException: If the given path is invalid.
+    
+    **return**: HTTP json response, {"files": file_list}), 200
 
-    Lists the contents of a directory. The directory should be locked for shared access before this operation is
+    **description**: Lists the contents of a directory. The directory should be locked for shared access before this operation is
     performed, because this operation reads the directory's child list.
     """
     request_content = request.json
@@ -415,10 +479,11 @@ def list_contents():
 
 def list_helper(path):
     """
-    :param path: the directory path to be visited
-    :return: a list file contents
+    **descripton** the helper function to list files and sub dirctory name in a given path
 
-    the helper function to list files and sub dirctory name in a given path
+    **param** path: the directory path to be visited
+
+    **return**: a list file contents
     """
     is_root = False
     # the path should be a dirctory, not file
@@ -452,21 +517,16 @@ def list_helper(path):
     return list_contents
 
 
-"""
-Determines whether a path refers to a directory.  
-> The parent directory should be locked for shared access before this operation is performed.
-> This is to prevent the object in question from being deleted or re-created while this call is in progress.
-"""
-
-
 @service_api.route('/is_directory', methods=['POST'])
 def check_directory():
     """
-    :exception FileNotFoundException: If the given path does not refer to a directory.
-    :exception IllegalArgumentException: If the given path is invalid.
-    :return: HTTP json response, {"success": success}), 200, `success` is True or False
+    **descripton**: the api for `/is_directory`, Determines whether a path refers to a directory.
 
-    Determines whether a path refers to a directory.
+    **exception** FileNotFoundException: If the given path does not refer to a directory.
+
+    **exception** IllegalArgumentException: If the given path is invalid.
+
+    **return**: HTTP json response, {"success": success}), 200, `success` is True or False
     """
     requested_content = request.json
 
@@ -503,11 +563,13 @@ def check_directory():
 @service_api.route('/is_file', methods=['POST'])
 def check_file():
     """
-    :exception FileNotFoundException: If the given path does not refer to a directory.
-    :exception IllegalArgumentException: If the given path is invalid.
-    :return: HTTP json response, {"success": success}), 200, `success` is True or False
+    **descripton**: the api for `/is_file`, Determines whether a path refers to a directory.
 
-    Determines whether a path refers to a directory.
+    **exception** FileNotFoundException: If the given path does not refer to a directory.
+
+    **exception** IllegalArgumentException: If the given path is invalid.
+
+    **return**: HTTP json response, {"success": success}), 200, `success` is True or False
     """
     requested_content = request.json
 
@@ -543,11 +605,13 @@ def check_file():
 
 def is_directory(dir_name, directory):
     """
-    :param dir_name: name of a directory
-    :param directory: the directory to be checked
-    :return: `True` if is a directory, `false` if not, `None` if not found
+    **descripton**: the judgement to decide whether a path is a directory
 
-    the judgement to decide whether a path is a directory
+    **param** dir_name: name of a directory
+
+    **param** directory: the directory to be checked
+
+    **return**: `True` if is a directory, `false` if not, `None` if not found
     """
     if dir_name in directory:
         return True
@@ -558,10 +622,13 @@ def is_directory(dir_name, directory):
 
 def is_file(file_name, direcory):
     """
-    the judgement to decide whether a path is a file
-    :param file_name: name of a file
-    :param direcory: the directory to be checked
-    :return: `True` if is a directory
+    **descripton**: the judgement to decide whether a path is a file
+
+    **param** file_name: name of a file
+
+    **param** direcory: the directory to be checked
+
+    **return**: `True` if is a directory
     """
     if "files" in direcory and file_name in direcory["files"]:
         return True
@@ -569,10 +636,11 @@ def is_file(file_name, direcory):
 
 def is_file_helper(path):
     """
-    the helper function to decide whether a path is a valid file
+    **descripton**: the helper function to decide whether a path is a valid file
 
-    :param path: the full name of a file
-    :return: `True` if is a directory, `False` if not
+    **param** path: the full name of a file
+
+    **return**: `True` if is a directory, `False` if not
     """
     path_list = empty_path_cleaner(path)
     file_name = path_list[-1]
@@ -590,10 +658,11 @@ def is_file_helper(path):
 
 def is_directory_helper(path):
     """
-    the helper function to decide whether a path is a valid directory
+    **descripton**: the helper function to decide whether a path is a valid directory
 
-    :param path: the full name of a directory
-    :return: `True` if is a directory, `False` if not
+    **param** path: the full name of a directory
+
+    **return**: `True` if is a directory, `False` if not
     """
     path_list = empty_path_cleaner(path)
     dir_name = path_list[-1]
@@ -610,11 +679,13 @@ def is_directory_helper(path):
 @service_api.route('/create_directory', methods=['POST'])
 def create_directory():
     """
-    Creates the given directory, if it does not exist. Path at which the directory is to be created.
+    **descripton**: Creates the given directory, if it does not exist. Path at which the directory is to be created.
 
-    :exception FileNotFoundException: If the given path does not refer to a directory.
-    :exception IllegalArgumentException: If the given path is invalid.
-    :return: HTTP json response, {"success": success}), 200, `success` is True or False
+    **exception** FileNotFoundException: If the given path does not refer to a directory.
+
+    **exception** IllegalArgumentException: If the given path is invalid.
+
+    **return**: HTTP json response, {"success": success}), 200, `success` is True or False
     """
     requested_content = request.json
 
@@ -649,10 +720,11 @@ def create_directory():
 
 def create_directory_helper(path):
     """
-    the helper function to create a directory
+    **descripton**: the helper function to create a directory
 
-    :param path: the full name of a dir path to be created
-    :return: `True` if created successfully, `False` if not, None if path not found
+    **param** path: the full name of a dir path to be created
+
+    **return**: `True` if created successfully, `False` if not, None if path not found
     """
     # if is root or not a directory
     if path == "/" and not is_directory_helper(path):
@@ -680,11 +752,13 @@ def create_directory_helper(path):
 @service_api.route('/create_file', methods=['POST'])
 def create_file():
     """
-    Creates the given file, if it does not exist.
+    **descripton**: api for `/create_file`, Creates the given file, if it does not exist.
 
-    :exception FileNotFoundException: If the given path does not refer to a directory.
-    :exception IllegalArgumentException: If the given path is invalid.
-    :return: HTTP json response, {"success": success}), 200, `success` is True or False
+    **exception** FileNotFoundException: If the given path does not refer to a directory.
+
+    **exception** IllegalArgumentException: If the given path is invalid.
+
+    **return**: HTTP json response, {"success": success}), 200, `success` is True or False
     """
     requested_content = request.json
 
@@ -723,11 +797,12 @@ def create_file():
 
 def create_file_helper(path):
     """
-    helper function to create a file, call storage_create by sending request
+    **descripton**: helper function to create a file, call storage_create by sending request.
     if success, add the file to all file set and initiale replica report for the file
 
-    :param path: the full path name
-    :return: `True` if success, else `False`
+    **param** path: the full path name
+
+    **return**: `True` if success, else `False`
     """
     path_list = empty_path_cleaner(path)
     file_name = path_list[-1]
@@ -776,10 +851,11 @@ def create_file_helper(path):
 
 def get_storage_map(path_to_find):
     """
-    helper function to find the storageserver which have stored the file
+    **descripton**: helper function to find the storageserver which have stored the file
 
-    :param path_to_find: the file name to be found
-    :return: (storage_ip,client_port,command_port) if exists, (None,None,None) if not found
+    **param** path_to_find: the file name to be found
+
+    **return**: (storage_ip,client_port,command_port) if exists, (None,None,None) if not found
     """
     for storageserver in storageserver_file_map:
         if path_to_find in storageserver_file_map[storageserver]:
@@ -789,10 +865,11 @@ def get_storage_map(path_to_find):
 
 def get_filestorage_map(path_to_find):
     """
-    helper function to find the storageserver which have stored the file
+    **descripton**: helper function to find the storageserver which have stored the file
 
-    :param path_to_find: the file name to be found
-    :return: (storage_ip,client_port,command_port) if exists, (None,None,None) if not found
+    **param** path_to_find: the file name to be found
+
+    **return**: (storage_ip,client_port,command_port) if exists, (None,None,None) if not found
     """
     if path_to_find in file_server_map:
         return file_server_map[path_to_find]
@@ -801,10 +878,11 @@ def get_filestorage_map(path_to_find):
 
 def path_invalid(path):
     """
-    the validation functon for a path, the path should start with '/' and with no ':' inside
+    **descripton**: the validation functon for a path, the path should start with '/' and with no ':' inside
 
-    :param path: the path to be validated
-    :return:
+    **param** path: the path to be validated
+
+    **return**: 'valid' if valid, else HTTP Exception response
     """
     if not path or len(path) == 0:
         return {
@@ -828,23 +906,25 @@ checkpoint
 @service_api.route('/lock', methods=['POST'])
 def lock_path():
     """
-    Creates the given file, if it does not exist.
-
-    :exception FileNotFoundException: If the given path does not refer to a directory.
-    :exception IllegalArgumentException: If the given path is invalid.
-    :return: HTTP json response : empty, 200
-
+    **descripton**: api for `/lock`. Creates the given file, if it does not exist.
     Locks a file or directory for either shared or exclusive access. Locking a file for shared access is considered
     by the naming server to be a read request, and may cause the file to be replicated. Locking a file for exclusive
     access is considered to be a write request, and causes all copies of the file but one to be deleted(invalidation)
 
+    **exception** FileNotFoundException: If the given path does not refer to a directory.
+
+    **exception** IllegalArgumentException: If the given path is invalid.
+
+    **return**: HTTP json response : empty, 200
+
     **Strueture**:
+    ``
         lock_queue_report{
             shared_counter = 0, the counter of shared lock
             queue = list() , the list of current queue, include all exclusive and shared lock request
             queue_size = 0 , the length of the current queue
         }
-
+    ``
     """
     requested_content = request.json
 
@@ -886,10 +966,11 @@ def lock_path():
 
 def lock_root_operation(exclusive=True):
     """
-    the helper function to lock the root
+    **descripton**: the helper function to lock the root
 
-    :param exclusive: the lock is exclusive or not. exclusive if is write , shared if is read
-    :return: HTTP json response : empty, 200
+    **param** exclusive: the lock is exclusive or not. exclusive if is write , shared if is read
+
+    **return**: HTTP json response : empty, 200
     """
     requested_path = "/"
     filelock, can_lock = acquire_lock_and_ability(is_root=True, exclusive_lock=exclusive)
@@ -947,10 +1028,11 @@ def lock_root_operation(exclusive=True):
 
 def add_to_shared_queue(exclusive):
     """
-    only if the lock is shared and no lock request is queuing can we increment the shared counter by one.
+    **descripton**: only if the lock is shared and no lock request is queuing can we increment the shared counter by one.
 
-    :param exclusive: the lock is exclusive or not
-    :return: None
+    **param** exclusive: the lock is exclusive or not
+
+    **return**: None
     """
     if not exclusive and lock_queue_report.queue_size == 0:
         lock_queue_report.shared_counter += 1
@@ -958,12 +1040,14 @@ def add_to_shared_queue(exclusive):
 
 def lock_directory_operation(path, exclusive):
     """
-    the helper function to lock directory
+    **descripton**: the helper function to lock directory
     the dirctory self lock report should be updated, no file to manipulate
 
-    :param path: the directory full path
-    :param exclusive: the lock is exclusive or not
-    :return: HTTP json response : empty, 200
+    **param** path: the directory full path
+
+    **param** exclusive: the lock is exclusive or not
+
+    **return**: HTTP json response : empty, 200
     """
     success_add = add_lock_request(path=path, exclusive_lock=exclusive)
     # FileNotFoundException
@@ -980,11 +1064,13 @@ def lock_directory_operation(path, exclusive):
 
 def lock_file_operation(path, exclusive):
     """
-    helper function to lock a single file, manipulate file, thus should consider queue
+    **descripton**: helper function to lock a single file, manipulate file, thus should consider queue
 
-    :param path: the file full path
-    :param exclusive: the lock is exclusive or not
-    :return: HTTP json response : empty, 200
+    **param** path: the file full path
+
+    **param** exclusive: the lock is exclusive or not
+
+    **return**: HTTP json response : empty, 200
     """
     success_add = add_lock_request(path=path, exclusive_lock=exclusive)
 
@@ -1008,14 +1094,16 @@ def lock_file_operation(path, exclusive):
 
 def add_lock_request(path, exclusive_lock):
     """
-    add the lock request to the global queue
+    **descripton**: add the lock request to the global queue
     if the path can not be locked, return False
     if the path can be locked, but can acquire `exclusive_lock` , add the lock_request to queue to
     if the path can be locked, but can not acquire `exclusive_lock`,nothing to add
 
-    :param path: the file full path
-    :param exclusive_lock: the lock is exclusive or not
-    :return: True if successful add, False if not
+    **param** path: the file full path
+
+    **param** exclusive_lock: the lock is exclusive or not
+
+    **return**: True if successful add, False if not
     """
     filelock, can_lock = acquire_lock_and_ability(path=path, exclusive_lock=exclusive_lock)
 
@@ -1041,11 +1129,12 @@ def add_lock_request(path, exclusive_lock):
 
 def check_upper_dir_locker(path):
     """
-    An object can be considered to be **effectively locked** for exclusive access
+    **descripton**: An object can be considered to be **effectively locked** for exclusive access
     if one of the directories on the path to it is already locked for exclusive access:
 
-    :param path: the file name to iterate from upper down
-    :return: the filelock, the ability to be lock
+    **param** path: the file name to iterate from upper down
+
+    **return**: the filelock, the ability to be lock
     """
     path_list = path.split("/")
     parent_dir = system_root
@@ -1060,11 +1149,13 @@ def check_upper_dir_locker(path):
 
 def dir_in_parent_directory(dir_name, parent_dir):
     """
-    check whether the dirctory belongs to another directory
+    **descripton**: check whether the dirctory belongs to another directory
 
-    :param dir_name: the short directory name
-    :param parent_dir: the parent dirctory name
-    :return: True if is sub directory, False if not
+    **param** dir_name: the short directory name
+
+    **param** parent_dir: the parent dirctory name
+
+    **return**: True if is sub directory, False if not
     """
     if dir_name in parent_dir:
         return True
@@ -1073,13 +1164,17 @@ def dir_in_parent_directory(dir_name, parent_dir):
 
 def dir_lock_and_ability_helper(is_root=False, directory=None, dir_name=None, exclusive_lock=True):
     """
-    check if a directory can be locked
+    **descripton**: check if a directory can be locked
 
-    :param is_root: is root or not, default False
-    :param directory: the full directory name to be checked
-    :param dir_name: the short sub directory name
-    :param exclusive_lock: the lock is exclusive or shared
-    :return:
+    **param** is_root: is root or not, default False
+
+    **param** directory: the full directory name to be checked
+
+    **param** dir_name: the short sub directory name
+
+    **param** exclusive_lock: the lock is exclusive or shared
+
+    **return**:`None,true` or `lock, False`
     """
     # if dir_name not a subdir of directory, return False
     if not is_root and not dir_in_parent_directory(dir_name, directory):
@@ -1103,11 +1198,13 @@ def dir_lock_and_ability_helper(is_root=False, directory=None, dir_name=None, ex
 
 def file_in_parent_directory(file_name, parent_dir):
     """
-    check whether the dirctory belongs to another directory
+    **descripton**: check whether the dirctory belongs to another directory
 
-    :param file_name: the short file name
-    :param parent_dir: the parent dirctory name
-    :return: True if is sub directory, False if not
+    **param** file_name: the short file name
+
+    **param** parent_dir: the parent dirctory name
+
+    **return**: True if is sub directory, False if not
     """
     if "fileleaf" not in parent_dir:
         return False
@@ -1120,12 +1217,15 @@ def file_in_parent_directory(file_name, parent_dir):
 
 def file_lock_and_ability_helper(parent_dir=None, file_name=None, exclusive_lock=True):
     """
-    check if a file can be locked
+    **descripton**: check if a file can be locked
 
-    :param parent_dir: the parent directory
-    :param file_name: the short file name
-    :param exclusive_lock: the lock type, is exclusive or shared
-    :return: (None,True), if can be locked. (The lock, False), if can't
+    **param** parent_dir: the parent directory
+
+    **param** file_name: the short file name
+
+    **param** exclusive_lock: the lock type, is exclusive or shared
+
+    **return**: (None,True), if can be locked. (The lock, False), if can't
     """
     if not file_in_parent_directory(file_name, parent_dir):
         return None, False
@@ -1146,12 +1246,15 @@ def file_lock_and_ability_helper(parent_dir=None, file_name=None, exclusive_lock
 
 def acquire_lock_and_ability(is_root=False, path=None, exclusive_lock=True):
     """
-    whether the path can acquire a exclusive/share lock
+    **descripton**: whether the path can acquire a exclusive/share lock
 
-    :param is_root: is root or not
-    :param path: the full path name
-    :param exclusive_lock: the lock is exclusive or not
-    :return: :return: (None,True), if can be locked. (The lock, False), if can't
+    **param** is_root: is root or not
+
+    **param** path: the full path name
+
+    **param** exclusive_lock: the lock is exclusive or not
+
+    **return**: **return**: (None,True), if can be locked. (The lock, False), if can't
     """
     if is_root:
         return dir_lock_and_ability_helper(is_root=True, exclusive_lock=exclusive_lock)
@@ -1177,21 +1280,25 @@ def acquire_lock_and_ability(is_root=False, path=None, exclusive_lock=True):
 
 def do_lock(is_root=False, path=None, exclusive_lock=True):
     """
+    **descripton**:
     lock root, directory, file according to the path
         1. if is root, manipulate in system_root['']
         2. if is a directory, lock all upper directory, acquire lock in directory["dirLock"]
         3. if is a file, lock all upper directory, acquire file lock in directory["fileleaf"], update replication
 
-    Replication update schema:
+    **Replication update schema**:
         1. if the lock is exclusive, delete all replica and leave only one
         2. if the lock is shared, detect file access time,if have been accessed for certain times
            (which is set in magic number FREQUENT)
            check and replicate this file(if not replicated)
 
-    :param is_root: is root or not
-    :param path: the dirctory or file full path
-    :param exclusive_lock: the required lock is exclusive or not
-    :return: True if do lock successfully
+    **param** is_root: is root or not
+
+    **param** path: the dirctory or file full path
+
+    **param** exclusive_lock: the required lock is exclusive or not
+
+    **return**: True if do lock successfully
     """
     filelock, can_lock = acquire_lock_and_ability(is_root, path, exclusive_lock)
     if not can_lock:
@@ -1236,10 +1343,11 @@ def do_lock(is_root=False, path=None, exclusive_lock=True):
 
 def lock_upper_dir(path):
     """
-    lock all the upper directories from root to parent dirctory according to the given path
+    **descripton**: lock all the upper directories from root to parent dirctory according to the given path
 
-    :param path: the full name of the requested path
-    :return: None
+    **param** path: the full name of the requested path
+
+    **return**: None
     """
     path_list = path.split("/")
     parent_dir = system_root
@@ -1254,10 +1362,11 @@ def lock_upper_dir(path):
 
 def unlock_upper_dir(path):
     """
-    unlock all the upper dirctorys from root to parent dirctory according to the given path
+    **descripton**: unlock all the upper dirctorys from root to parent dirctory according to the given path
 
-    :param path: the full name of the requested path
-    :return: None
+    **param** path: the full name of the requested path
+
+    **return**: None
     """
     path_list = path.split("/")
     parent_dir = system_root
@@ -1272,12 +1381,15 @@ def unlock_upper_dir(path):
 
 def lock_dirctory(dir_name, parent_dir, exclusive_lock):
     """
-    lock a specific directory in parent dirctory by acquiring exclusive_lock
+    **descripton**: lock a specific directory in parent dirctory by acquiring exclusive_lock
 
-    :param dir_name: the short directory name
-    :param parent_dir: the parent directory
-    :param exclusive_lock: lock is exclusive or not
-    :return: True if success
+    **param** dir_name: the short directory name
+
+    **param** parent_dir: the parent directory
+
+    **param** exclusive_lock: lock is exclusive or not
+
+    **return**: True if success
     """
     target_dir = parent_dir[dir_name]
     if "dirlock" not in target_dir:
@@ -1289,7 +1401,7 @@ def lock_dirctory(dir_name, parent_dir, exclusive_lock):
 
 def lock_file(file_name, parent_dir, exclusive_lock, path):
     """
-    lock a specific file in parent dirctory by acquiring exclusive_lock
+    **descripton**: lock a specific file in parent dirctory by acquiring exclusive_lock
     delete all replication except for one instance if the lock is exclusive
     add replication if the file is shared and have been accessed for FREQUENT times
 
@@ -1299,10 +1411,13 @@ def lock_file(file_name, parent_dir, exclusive_lock, path):
            (which is set in magic number FREQUENT)
            check and replicate this file(if not replicated)
 
-    :param file_name: the short directory name
-    :param parent_dir: the parent directory
-    :param exclusive_lock: lock is exclusive or not
-    :return: True if success, False if not
+    **param** file_name: the short directory name
+
+    **param** parent_dir: the parent directory
+
+    **param** exclusive_lock: lock is exclusive or not
+
+    **return**: True if success, False if not
     """
     if "fileleaf" not in parent_dir:
         return False
@@ -1321,15 +1436,18 @@ def lock_file(file_name, parent_dir, exclusive_lock, path):
 
 def should_start_new_replication(path, exclusive_lock):
     """
-    judgement whether the path acquiring a lock need to start a new replication process.
+    **descripton**: judgement whether the path acquiring a lock need to start a new replication process.
 
     **requirements**:
         1. the lock should not be exclusive(AKA write)
         2. the current path is not yet replicated
         3. the access time is more than a threshold(set by the magic number FREQUENT here)
-    :param path: the full path of a file
-    :param exclusive_lock: the lock is replicated or not
-    :return: `True` if should start a new replication, `False` if should not
+
+    **param** path: the full path of a file
+
+    **param** exclusive_lock: the lock is replicated or not
+
+    **return**: `True` if should start a new replication, `False` if should not
     """
     return (not exclusive_lock) and \
            (not replica_report[path].is_replicated) and \
@@ -1338,14 +1456,17 @@ def should_start_new_replication(path, exclusive_lock):
 
 def should_delete_replication(path, exclusive_lock):
     """
-    judgement whether we should invalidate all stale replication for the path acquiring a lock should invalidate
+    **descripton**: judgement whether we should invalidate all stale replication for the path acquiring a lock should invalidate
 
-    requirements:
+    **requirements**:
         1. the lock should be exclusive(AKA write)
         2. the current path has already be somewhat replicated
-    :param path: the full path of a file
-    :param exclusive_lock: the lock is replicated or not
-    :return: `True` if should start a new replication, `False` if should not
+
+    **param** path: the full path of a file
+
+    **param** exclusive_lock: the lock is replicated or not
+
+    **return**: `True` if should start a new replication, `False` if should not
     """
     return (exclusive_lock) and \
            (replica_report[path].is_replicated)
@@ -1353,12 +1474,14 @@ def should_delete_replication(path, exclusive_lock):
 
 def add_or_delete_replica(path, exclusive_lock):
     """
-    if the path acquiring a shared lock should be replicated, start a new process of replication.
+    **descripton**: if the path acquiring a shared lock should be replicated, start a new process of replication.
     if the stale replication of path acquiring a exclusive lock should be invalidate, start a new process of delete
 
-    :param path: the full path of a file
-    :param exclusive_lock: the lock is replicated or not
-    :return: `True` if operation success, `False` if failed
+    **param** path: the full path of a file
+
+    **param** exclusive_lock: the lock is replicated or not
+
+    **return**: `True` if operation success, `False` if failed
     """
     if exclusive_lock:
         if should_delete_replication(path, exclusive_lock):
@@ -1373,10 +1496,11 @@ def add_or_delete_replica(path, exclusive_lock):
 
 def copy_from_storageserver(path):
     """
-    replicate a file every FREQUENT times of visit.
+    **descripton**: replicate a file every FREQUENT times of visit.
 
-    :param path: the full path of a file
-    :return: `True` if operation success, `False` if failed
+    **param** path: the full path of a file
+
+    **return**: `True` if operation success, `False` if failed
     """
     # set access counter to 1, do replication every FREQUENT times of visit
     replica_report[path].visited_times = 1
@@ -1406,18 +1530,23 @@ def copy_from_storageserver(path):
 
 def replica_thread(path, server_ip, server_port, command_port):
     """
-    Ask for a thread that replication file.
+    **descripton**: Ask for a thread that replication file.
 
-    Update replica_report: if the HTTP response is successful,
+    **Update replica_report schema**:
+    if the HTTP response is successful,
         1. update replica_report[path].is_replicated
         2. add command_port into list of replication servers.(can be duplicate, indicating numbers of replication)
         3. replicaed_times increment by 1
 
-    :param path: Path to the file to be copied.
-    :param server_ip: IP of the storage server that hosting the file , should be "127.0.0.1"
-    :param server_port: storage port of the storage server that hosting the file.
-    :param command_port: storage port of the storage server that receiving the `/copy` command.
-    :return: None
+    **param** path: Path to the file to be copied.
+
+    **param** server_ip: IP of the storage server that hosting the file , should be "127.0.0.1"
+
+    **param** server_port: storage port of the storage server that hosting the file.
+
+    **param** command_port: storage port of the storage server that receiving the `/copy` command.
+
+    **return**: None
     """
     is_success = send_replica_request(path, server_ip, server_port, command_port)
     #
@@ -1429,13 +1558,17 @@ def replica_thread(path, server_ip, server_port, command_port):
 
 def send_replica_request(path, server_ip, server_port, command_port):
     """
-    send `/storage_copy` request to http://localhost:command_port/storage_copy
+    **descripton**: send `/storage_copy` request to http://localhost:command_port/storage_copy
 
-    :param path: Path to the file to be copied.
-    :param server_ip: IP of the storage server that hosting the file , should be "127.0.0.1"
-    :param server_port: storage port of the storage server that hosting the file.
-    :param command_port: storage port of the storage server that receiving the `/copy` command.
-    :return: `True` if the HTTP reponse successfully, `False` if not.
+    **param** path: Path to the file to be copied.
+
+    **param** server_ip: IP of the storage server that hosting the file , should be "127.0.0.1"
+
+    **param** server_port: storage port of the storage server that hosting the file.
+
+    **param** command_port: storage port of the storage server that receiving the `/copy` command.
+
+    **return**: `True` if the HTTP reponse successfully, `False` if not.
     """
     request = {
         "path": path,
@@ -1452,10 +1585,11 @@ def send_replica_request(path, server_ip, server_port, command_port):
 
 def delete_exclusive_replica(path):
     """
-    Ask for a thread that delete file
+    **descripton**: Ask for a thread that delete file
 
-    :param path: Path to the file to be copied.
-    :return: True if success
+    **param** path: Path to the file to be copied.
+
+    **return**: True if success
     """
     if replica_report[path].replicaed_times > 1:
         # delete from the last, convenient for pop()
@@ -1472,7 +1606,7 @@ def delete_exclusive_replica(path):
 
 def delete_thread(path, command_port):
     """
-    ask for delete a file
+    **descripton**: ask for delete a file
 
     **Update replica_report**:
         if the HTTP response is successful,
@@ -1480,9 +1614,11 @@ def delete_thread(path, command_port):
             2. delete the command that have been deleted
             3. replicated_times decremented by 1
 
-    :param path: to be deleted
-    :param command_port: the server command port
-    :return: None
+    **param** path: to be deleted
+
+    **param** command_port: the server command port
+
+    **return**: None
     """
     is_success = send_delete_request(path, command_port)
     # update replica_report
@@ -1494,11 +1630,13 @@ def delete_thread(path, command_port):
 
 def send_delete_request(path, command_port):
     """
-    send `/storage_delete` request to http://localhost:command_port/storage_delete
+    **descripton**: send `/storage_delete` request to http://localhost:command_port/storage_delete
 
-    :param path: to be deleted
-    :param command_port: the server command port
-    :return: `True` if success, `False` if not
+    **param** path: to be deleted
+
+    **param** command_port: the server command port
+
+    **return**: `True` if success, `False` if not
     """
     request = {"path": path}
     response = json.loads(
@@ -1512,14 +1650,17 @@ def send_delete_request(path, command_port):
 
 def do_unlock(is_root=False, path=None):
     """
-
+    **descripton**:
      unlock a root, directory or file
         1. if is root: release lock by priority: exclusive_wait_queue > lock_queue_report.queue > root_report["dirlock"]
         2. if is directory: release lock from upper to bottom in root_report["dirlock"]
         3. if is file: release lock from upper to bottom directory and in parent_dir["fileleaf"]
-    :param is_root: is root or not
-    :param path: the path full name to be unlocked
-    :return: True if successfully unlock
+
+    **param** is_root: is root or not
+
+    **param** path: the path full name to be unlocked
+
+    **return**: True if successfully unlock
     """
     if is_root:
         root_report = system_root['']
@@ -1558,9 +1699,11 @@ def do_unlock(is_root=False, path=None):
 
 def unlock_upper_dir(path):
     """
-    unlock all upper directories
-    :param path: the full path name
-    :return: True if unlock successfully, else False
+    **descripton**: unlock all upper directories
+
+    **param** path: the full path name
+
+    **return**: True if unlock successfully, else False
     """
     path_list = path.split("/")
     parent_dir = system_root
@@ -1573,10 +1716,13 @@ def unlock_upper_dir(path):
 
 def unlock_dirctory(dir_name, parent_dir):
     """
-    unlock specific directory in a parent directory
-    :param dir_name: the short name for dirctory
-    :param parent_dir: the parent directory
-    :return: True if unlock successfully, else False
+    **descripton**: unlock specific directory in a parent directory
+
+    **param** dir_name: the short name for dirctory
+
+    **param** parent_dir: the parent directory
+
+    **return**: True if unlock successfully, else False
     """
     if not dir_in_parent_directory(dir_name, parent_dir):
         return False
@@ -1589,10 +1735,13 @@ def unlock_dirctory(dir_name, parent_dir):
 
 def unlock_file(file_name, parent_dir):
     """
-    unlock specific file in a parent directory
-    :param file_name: the short name for file
-    :param parent_dir: the parent directory
-    :return: True if unlock successfully, else False
+    **descripton**: unlock specific file in a parent directory
+
+    **param** file_name: the short name for file
+
+    **param** parent_dir: the parent directory
+
+    **return**: True if unlock successfully, else False
     """
     if not file_in_parent_directory(file_name, parent_dir):
         return False
@@ -1610,10 +1759,11 @@ def unlock_file(file_name, parent_dir):
 @service_api.route('/unlock', methods=['POST'])
 def unlock_path():
     """
-    Unlocks a file or directory.
+    **descripton**: Unlocks a file or directory.
 
-    :return: empty (If unlock successfully, the response body should be empty.), 200
-    :exception IllegalArgumentException:
+    **return**: empty (If unlock successfully, the response body should be empty.), 200
+
+    **exception** IllegalArgumentException:
         If the path is invalid or cannot be found.
         This is a client programming error, as the path must have previously been locked,
         and cannot be removed while it is locked.
@@ -1659,11 +1809,13 @@ def delete_dir_or_file():
            remove all structures about it("files","fileleaf",replica_report[file]),
         2. if is a directory, remove all files under it and delete the directory.
 
-    :return:
+    **return**:
         `true` if the file or directory is successfully deleted, return `false` otherwise.
         The root directory cannot be deleted.
-    :exception FileNotFoundException: If the file or parent directory does not exist.
-    :exception IllegalArgumentException: If the given path is invalid.
+
+    **exception** FileNotFoundException: If the file or parent directory does not exist.
+
+    **exception** IllegalArgumentException: If the given path is invalid.
     """
     requested_content = request.json
 
@@ -1725,12 +1877,14 @@ def delete_dir_or_file():
 
 def delete_given_path(path, file_or_dir):
     """
-    delete a file or directory by calling a /storage_delete HTTP request
+    **descripton**: delete a file or directory by calling a /storage_delete HTTP request
 
-    :param path: the filename to be deleted
+    **param** path: the filename to be deleted
                  if is a file, the same as file_or_dir, if is a directory, have the same directory as file_or_dir)
-    :param file_or_dir: the name of the file or dir
-    :return: None
+
+    **param** file_or_dir: the name of the file or dir
+
+    **return**: None
     """
     for command_port in replica_report[path].command_ports:
         send_deletion_request(file_or_dir, command_port)
@@ -1741,10 +1895,11 @@ def delete_given_path(path, file_or_dir):
 
 def completely_delete_file(filepath):
     """
-    completely remove all file related structures, including parent_dir["files","fileleaf"] and all_storageserver_files
+    **descripton**: completely remove all file related structures, including parent_dir["files","fileleaf"] and all_storageserver_files
 
-    :param filepath: the full name of the file to be deleted in name server
-    :return: None
+    **param** filepath: the full name of the file to be deleted in name server
+
+    **return**: None
     """
     file_list = filepath.split("/")
     file_name = file_list[-1]
@@ -1761,11 +1916,13 @@ def completely_delete_file(filepath):
 
 def send_deletion_request(path, command_port):
     """
-    a HTTP request to call `/storage_delete`
+    **descripton**: a HTTP request to call `/storage_delete`
 
-    :param path: the path to be deleted, can be a file or a directory
-    :param command_port: the command port for the storage server
-    :return: the success information from HTTP response
+    **param** path: the path to be deleted, can be a file or a directory
+
+    **param** command_port: the command port for the storage server
+
+    **return**: the success information from HTTP response
     """
     response = json.loads(
         requests.post("http://localhost:" + str(command_port) + "/storage_delete",
@@ -1776,20 +1933,22 @@ def send_deletion_request(path, command_port):
 
 def start_registration(registration_port):
     """
-    the Flask run function for @registration_api
+    **descripton**: the Flask run function for @registration_api
 
-    :param registration_port: the port for Naming Server Registration
-    :return: None
+    **param** registration_port: the port for Naming Server Registration
+
+    **return**: None
     """
     registration_api.run(host='localhost', port=int(registration_port))
 
 
 def start_service(service_port):
     """
-    the Flask run function for @service_api
+    **descripton**: the Flask run function for @service_api
 
-    :param service_port: the port for Naming Server Service
-    :return: None
+    **param** service_port: the port for Naming Server Service
+
+    **return**: None
     """
     service_api.run(host='localhost', port=int(service_port))
 
