@@ -4,13 +4,4 @@ starting http servers...
 adding client apis...
 adding command apis...
 skeleton started
-missing file
-missing fillesize: 4
 local: /replicate/file5
-lelen after write: 4
-/file4
-e/file5
-len after write: 8
-size: 4
-len after write: 4
-/file4
