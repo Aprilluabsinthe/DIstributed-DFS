@@ -1,30 +1,46 @@
 package storage;
 
-import java.io.*;
-import java.util.*;
-import java.util.Base64;
-import java.util.Base64.Decoder;
-import java.util.Base64.Encoder;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.FileNotFoundException;
-import java.nio.file.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import com.google.gson.Gson;
-import com.google.gson.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpExchange;
-import jsonhelper.*;
-import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.concurrent.Executors;
-import java.io.PrintStream;
-import java.io.FileOutputStream;
 
+import com.google.gson.*;
+import com.google.gson.Gson;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+
+import jsonhelper.BooleanReturn;
+import jsonhelper.CopyRequest;
+import jsonhelper.DataReturn;
+import jsonhelper.ExceptionReturn;
+import jsonhelper.FilesReturn;
+import jsonhelper.PathRequest;
+import jsonhelper.ReadRequest;
+import jsonhelper.RegisterRequest;
+import jsonhelper.SizeReturn;
+import jsonhelper.WriteRequest;
+
+
+/** 
+ * This class encapsulates a storage server.
+ * @author Yuan Gu
+*/
 public class StorageServer {
 
 
@@ -37,6 +53,7 @@ public class StorageServer {
     /** local path to storage server’s local file directory */
     private String rootPath;
 
+    /** local path in Java Path */
     private Path rootDir;
 
     /** local host IP */
@@ -46,11 +63,24 @@ public class StorageServer {
     /** command interface */
     protected HttpServer command_skeleton;
 
+    /** if interfaces have started */
     private boolean skeleton_started;
+    /** Gson object */
     protected Gson gson;
 
+    /** initial files under root directory when startup */
     private ArrayList<String> initialFiles;
 
+
+    /**
+     * Constructs a storage server. Initialize all global varibles.
+     * @param clientPort the port that the server is listening for client's request
+     * @param commandPort the port that the server is listening for naming server's request
+     * @param registrationPort the port that the server uses to register itself to the naming server
+     * @param rootPath the local root directory
+     * @throws IOException IO exception
+     * @throws InterruptedException Interrupted exception
+     */
     public StorageServer(int clientPort, int commandPort, int registrationPort, String rootPath) throws IOException, InterruptedException {
 
         this.clientPort = clientPort;
@@ -79,10 +109,13 @@ public class StorageServer {
 
 
     /**
-     * start two HttpServer: storage and command skeletons
-     * register the local storage server to the naming server via register request
-     * delete duplicate files on local storage
-     *
+     * Register the local storage server to the naming server via register request
+     * delete duplicate files on local storage.
+     * Start two HttpServer: storage and command skeletons.
+     * Register all storage and command APIs to skeletons.
+     * 
+     * @throws IOException IO exception
+     * @throws InterruptedException Interrupted exception
      */
     public synchronized void startStorageServer() throws IOException, InterruptedException {
         System.out.println("start storage server...");
@@ -135,7 +168,14 @@ public class StorageServer {
         System.out.println("skeleton started");
     }
 
-    public HttpResponse<String> register(String[] files) throws IOException, InterruptedException {
+    /**
+     * Wrapper function to register the local server to the naming server.
+     * @param files files under the local root directory
+     * @throws IOException IO exception
+     * @throws InterruptedException interrupted exception
+     * @return the HTTP response from naming server's register service
+     */
+    private HttpResponse<String> register(String[] files) throws IOException, InterruptedException {
 
         RegisterRequest registerRequest = new RegisterRequest(STORAGE_SERVER_IP, clientPort, commandPort, files);
         HttpClient client = HttpClient.newHttpClient();
@@ -152,50 +192,16 @@ public class StorageServer {
         return response;
     }
 
-    private void getAllFiles(File dir) {
-        File[] fileList = dir.listFiles();
-
-        for(File file : fileList) {
-            if(file.isFile()) {
-                Path absolutePath = Paths.get(file.getPath());
-                Path relativePath = getRelativePath(absolutePath);
-                initialFiles.add(relativePath.toString());
-            } else {
-                getAllFiles(file);
-            }
-        }
-    }
-
-    private Path getAbsolutePath(Path path) {
-        String pathStr = path.toString();
-
-        // just in case
-        if (pathStr.startsWith(rootPath)) {
-            return path;
-        }
-        return Paths.get(rootPath + pathStr);
-    }
-
-    private Path getRelativePath(Path path) {
-        String pathStr = path.toString();
-
-        // just in case
-        if (!pathStr.startsWith(rootPath)) {
-            return path;
-        }
-        return Paths.get(pathStr.substring(rootPath.length()));
-    }
-
 
     /**
-     * start skeletons and register all APIs
-     *
+     * start skeletons and register all APIs.
+     * @throws IOException IO exception
      */
-    protected synchronized void startSkeletons() throws IOException {
-        this.client_skeleton = HttpServer.create(new InetSocketAddress(this.STORAGE_SERVER_IP, this.clientPort), 0);
+    private synchronized void startSkeletons() throws IOException {
+        this.client_skeleton = HttpServer.create(new InetSocketAddress(STORAGE_SERVER_IP, this.clientPort), 0);
         this.client_skeleton.setExecutor(Executors.newCachedThreadPool());
 
-        this.command_skeleton = HttpServer.create(new InetSocketAddress(this.STORAGE_SERVER_IP, this.commandPort), 0);
+        this.command_skeleton = HttpServer.create(new InetSocketAddress(STORAGE_SERVER_IP, this.commandPort), 0);
         this.command_skeleton.setExecutor(Executors.newCachedThreadPool());
 
         if (skeleton_started) {
@@ -210,6 +216,10 @@ public class StorageServer {
         skeleton_started = true;
     }
 
+
+    /**
+     * Add client APIs
+     */
     private void add_client_apis() {
         this.size();
         this.read();
@@ -217,6 +227,9 @@ public class StorageServer {
         System.out.println("adding client apis...");
     }
 
+    /**
+     * Add command APIs
+     */
     private void add_command_apis() {
         this.create();
         this.delete();
@@ -224,7 +237,11 @@ public class StorageServer {
         System.out.println("adding command apis...");
     }
 
-    public void size() {
+
+    /**
+     * Size request handler
+     */
+    private void size() {
         this.client_skeleton.createContext("/storage_size", (exchange -> {
             String respText = "";
             int returnCode = 200;
@@ -236,24 +253,16 @@ public class StorageServer {
                     InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
                     pathRequest = gson.fromJson(isr, PathRequest.class);
 
-                    System.out.println(pathRequest.path);
-
                     Path p = Paths.get(pathRequest.path);
                     Path pathToQuery = getAbsolutePath(p);
 
                     if (pathRequest.path == null || pathRequest.path.length() == 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IllegalArgumentException", "invalid path");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
                     if (Files.isDirectory(pathToQuery) || !Files.exists(pathToQuery)) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("FileNotFoundException", "file not found");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "FileNotFoundException", "file not found");
                         return;
                     }
 
@@ -284,7 +293,11 @@ public class StorageServer {
         }));
     }
 
-    public void read() {
+
+    /**
+     * Read request handler.
+     */
+    private void read() {
         this.client_skeleton.createContext("/storage_read", (exchange -> {
             String respText = "";
             int returnCode = 200;
@@ -300,18 +313,12 @@ public class StorageServer {
                     Path pathToRead = getAbsolutePath(p);
 
                     if (readRequest.path == null || readRequest.path.length() == 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IllegalArgumentException", "invalid path");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
                     if (!Files.isReadable(pathToRead) || Files.isDirectory(pathToRead)) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("FileNotFoundException", "file not found");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "FileNotFoundException", "file not found");
                         return;
                     }
 
@@ -321,10 +328,7 @@ public class StorageServer {
                     byte[] allData = Files.readAllBytes(pathToRead);
 
                     if (len < 0 || off + len > allData.length || off < 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IndexOutOfBoundsException", "index out of bound");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IndexOutOfBoundsException", "index out of bound");
                         return;
                     }
 
@@ -358,7 +362,10 @@ public class StorageServer {
         }));
     }
 
-    public void write() {
+    /**
+     * Write request handler.
+     */
+    private void write() {
         this.client_skeleton.createContext("/storage_write", (exchange -> {
             String respText = "";
             int returnCode = 200;
@@ -374,18 +381,12 @@ public class StorageServer {
                     Path pathToWrite = getAbsolutePath(p);
 
                     if (writeRequest.path == null || writeRequest.path.length() == 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IllegalArgumentException", "invalid path");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
                     if (!Files.isWritable(pathToWrite) || Files.isDirectory(pathToWrite)) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("FileNotFoundException", "file not found");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "FileNotFoundException", "file not found");
                         return;
                     }
 
@@ -394,10 +395,7 @@ public class StorageServer {
                     byte[] writeData = Base64.getDecoder().decode(encodedData);
 
                     if (off < 0L) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IndexOutOfBoundsException", "index out of bound");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IndexOutOfBoundsException", "index out of bound");
                         return;
                     }
 
@@ -406,7 +404,6 @@ public class StorageServer {
                     ras.seek(off);
                     ras.write(writeData);
 
-
                     // to truncate the remaining length
                     if (writeData.length < Files.size(pathToWrite) && off == 0L) {
                         ras.setLength(writeData.length);
@@ -414,8 +411,6 @@ public class StorageServer {
 
                     ras.close();
                     boolean success = true;
-
-                    System.out.println("len after write: " + Files.size(pathToWrite));
 
                     BooleanReturn booleanReturn = new BooleanReturn(success);
                     returnCode = 200;
@@ -442,7 +437,10 @@ public class StorageServer {
         }));
     }
 
-    public void create() {
+    /**
+     * Create request handler.
+     */
+    private void create() {
         this.command_skeleton.createContext("/storage_create", (exchange -> {
             String respText = "";
             int returnCode = 200;
@@ -458,10 +456,7 @@ public class StorageServer {
                     pathRequest = gson.fromJson(isr, PathRequest.class);
 
                     if (pathRequest.path == null || pathRequest.path.length() == 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IllegalArgumentException", "invalid path");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
@@ -504,7 +499,10 @@ public class StorageServer {
         }));
     }
 
-    public void delete() {
+    /**
+     * Delete request handler.
+     */
+    private void delete() {
         this.command_skeleton.createContext("/storage_delete", (exchange -> {
             String respText = "";
             int returnCode = 200;
@@ -519,10 +517,7 @@ public class StorageServer {
                     pathRequest = gson.fromJson(isr, PathRequest.class);
 
                     if (pathRequest.path == null || pathRequest.path.length() == 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IllegalArgumentException", "invalid path");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
@@ -531,6 +526,7 @@ public class StorageServer {
 
                     if (!pathToDelete.toString().equals(this.rootPath)) {
                         System.out.println("delete start: " + pathToDelete.toString());
+
                         // clean a directory recursively first
                         if (Files.isDirectory(pathToDelete)) {
                             System.out.println("there is directory");
@@ -539,7 +535,6 @@ public class StorageServer {
                         } else {
                             Files.delete(pathToDelete);
                         }
-
                     } else {
                         isDeleted = false;
                     }
@@ -569,18 +564,10 @@ public class StorageServer {
         }));
     }
 
-    private void clearDir(File dir) {
-
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file: files) {
-                clearDir(file);
-            }
-        }
-        dir.delete();
-    }
-
-    public void copy() {
+    /**
+     * Copy request handler.
+     */
+    private void copy() {
         this.command_skeleton.createContext("/storage_copy", (exchange -> {
             String respText = "";
             int returnCode = 200;
@@ -588,17 +575,12 @@ public class StorageServer {
             if (exchange.getRequestMethod().equals("POST")) {
                 CopyRequest copyRequest = null;
 
-                boolean isCopied = true;
-
                 try {
                     InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
                     copyRequest = gson.fromJson(isr, CopyRequest.class);
 
                     if (copyRequest.path == null || copyRequest.path.length() == 0) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn("IllegalArgumentException", "invalid path");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                        this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
@@ -608,29 +590,20 @@ public class StorageServer {
                     int serverPort = copyRequest.server_port;
 
                     HttpResponse<String> sizeResponse = getRemoteSize(serverIp, serverPort, pathFrom);
-                    ExceptionReturn potentialSizeException = gson.fromJson(sizeResponse.body(), ExceptionReturn.class);
+                    String sizeException = this.getPotentialException(sizeResponse);
 
-                    if (potentialSizeException.exception_type != null) {
-                        System.out.println("missing file");
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn(potentialSizeException.exception_type, "exception response from size request");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                    if (sizeException != null) {
+                        this.generateExceptionResponse(exchange, respText, sizeException, "exception response from size request");
                         return;
                     }
 
-                    // otherwise no exception from size return
+                    // otherwise no exception from size return, send a read request to read all content
                     long size = gson.fromJson(sizeResponse.body(), SizeReturn.class).size;
-                    System.out.println("size: " + size);
-
                     HttpResponse<String> readResponse = readRemoteFile(serverIp, serverPort, pathFrom, (int)size);
 
-                    ExceptionReturn potentialReadException = gson.fromJson(readResponse.body(), ExceptionReturn.class);
-                    if (potentialReadException.exception_type != null) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn(potentialReadException.exception_type, "exception response from read request");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                    String readException = this.getPotentialException(readResponse);
+                    if (readException != null) {
+                        this.generateExceptionResponse(exchange, respText, readException, "exception response from read request");
                         return;
                     }
 
@@ -641,37 +614,26 @@ public class StorageServer {
                     if (!Files.exists(getAbsolutePath(pathToCopy))) {
                         HttpResponse<String> createResponse = createLocalFile(pathFrom);
 
-                        ExceptionReturn potentialCreateException = gson.fromJson(createResponse.body(), ExceptionReturn.class);
-                        if (potentialCreateException.exception_type != null) {
-                            returnCode = 404;
-                            ExceptionReturn exceptionReturn = new ExceptionReturn(potentialCreateException.exception_type, "exception response from read request");
-                            respText = gson.toJson(exceptionReturn);
-                            this.generateResponseAndClose(exchange, respText, returnCode);
+                        String createException = this.getPotentialException(createResponse);
+                        if (createException != null) {
+                            this.generateExceptionResponse(exchange, respText, createException, "exception response from create request");
                             return;
                         }
-
                         createSuccess = gson.fromJson(createResponse.body(), BooleanReturn.class).success;
                     }
 
                     HttpResponse<String> writeResponse = writeLocalFile(pathFrom, data);
 
-                    ExceptionReturn potentialWriteException = gson.fromJson(writeResponse.body(), ExceptionReturn.class);
+                    String writeException = this.getPotentialException(writeResponse);
 
-                    if (potentialWriteException.exception_type != null) {
-                        returnCode = 404;
-                        ExceptionReturn exceptionReturn = new ExceptionReturn(potentialWriteException.exception_type, "exception response from write request");
-                        respText = gson.toJson(exceptionReturn);
-                        this.generateResponseAndClose(exchange, respText, returnCode);
+                    if (writeException != null) {
+                        this.generateExceptionResponse(exchange, respText, writeException, "exception response from write request");
                         return;
                     }
 
                     boolean writeSuccess = gson.fromJson(writeResponse.body(), BooleanReturn.class).success;
 
-                    if (!createSuccess || !writeSuccess) {
-                        isCopied = false;
-                    }
-
-                    BooleanReturn booleanReturn = new BooleanReturn(isCopied);
+                    BooleanReturn booleanReturn = new BooleanReturn(createSuccess && writeSuccess);
                     respText = gson.toJson(booleanReturn);
 
 
@@ -697,6 +659,15 @@ public class StorageServer {
         }));
     }
 
+    /**
+     * Wrapper function to get file's size from a remote server.
+     * @param ip the remote server's IP
+     * @param port the remote server's port
+     * @param path the path
+     * @return a HTTP response
+     * @throws IOException IO exception
+     * @throws InterruptedException interrupted exception
+     */
     private HttpResponse<String> getRemoteSize(String ip, int port, String path) throws IOException, InterruptedException {
         PathRequest pathRequest = new PathRequest(path);
 
@@ -713,7 +684,17 @@ public class StorageServer {
         response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response;
     }
-
+    
+    /**
+     * Wrapper function to read all content of a file from a remote server.
+     * @param ip the remote server's IP
+     * @param port the remote server's port
+     * @param path the path to the file
+     * @param len the size of the file
+     * @return a HTTP response
+     * @throws IOException IO exception
+     * @throws InterruptedException interrupted exception
+     */
     private HttpResponse<String> readRemoteFile(String ip, int port, String path, int len) throws IOException, InterruptedException {
         ReadRequest readRequest = new ReadRequest(path, 0, len);
 
@@ -731,6 +712,13 @@ public class StorageServer {
         return response;
     }
 
+    /**
+     * Wrapper function to create a file in the local server.
+     * @param path the path to the file
+     * @return a HTTP response
+     * @throws IOException IO exception
+     * @throws InterruptedException interrupted exception
+     */
     private HttpResponse<String> createLocalFile(String path) throws IOException, InterruptedException {
         PathRequest pathRequest = new PathRequest(path);
         System.out.println("local: " + path);
@@ -749,6 +737,14 @@ public class StorageServer {
         return response;
     }
 
+    /**
+     * Wrapper function to write a file in the local server.
+     * @param path the path to the file
+     * @param writeData the data to be written
+     * @return a HTTP response
+     * @throws IOException IO exception
+     * @throws InterruptedException interrupted exception
+     */
     private HttpResponse<String> writeLocalFile(String path, String writeData) throws IOException, InterruptedException {
         WriteRequest writeRequest = new WriteRequest(path, 0, writeData);
 
@@ -767,22 +763,59 @@ public class StorageServer {
     }
 
 
+    /**
+     * Get client port.
+     * @return the client port
+     */
     public int getClientPort() {
         return clientPort;
     }
 
+    /**
+     * Get registration port.
+     * @return the registration port
+     */
     public int getRegistrationPort() {
         return registrationPort;
     }
 
+    /**
+     * Get command port.
+     * @return the command port
+     */
     public int getCommandPort() {
         return commandPort;
     }
 
+    /**
+     * Get the local root directory.
+     * @return the directory
+     */
     public String getRootPath() {
         return rootPath;
     }
 
+    /**
+     * Generate a exception response to the client.
+     * @param exchange the HTTP exchange
+     * @param respText the response text
+     * @param exceptionType the exception type
+     * @param exceptionInfo the exception message
+     * @throws IOException IO exception
+     */
+    private void generateExceptionResponse(HttpExchange exchange, String respText, String exceptionType, String exceptionInfo) throws IOException {
+        ExceptionReturn exceptionReturn = new ExceptionReturn(exceptionType, exceptionInfo);
+        respText = gson.toJson(exceptionReturn);
+        this.generateResponseAndClose(exchange, respText, 404);
+    }
+
+    /**
+     * Generate a HTTP response to the client and close the exchange context.
+     * @param exchange the HTTP exchange
+     * @param respText the response text
+     * @param returnCode the return code
+     * @throws IOException IO exception
+     */
     private void generateResponseAndClose(HttpExchange exchange, String respText, int returnCode) throws IOException {
         exchange.sendResponseHeaders(returnCode, respText.getBytes().length);
         OutputStream output = exchange.getResponseBody();
@@ -791,6 +824,85 @@ public class StorageServer {
         exchange.close();
     }
 
+    /**
+     * Determine whether a HTTP response is an exception return.
+     * @param response the HTTP response
+     * @return the exception type if the response is an exception, null otherwise
+     */
+    private String getPotentialException(HttpResponse<String> response) {
+        ExceptionReturn potentialException = gson.fromJson(response.body(), ExceptionReturn.class);
+        return potentialException.exception_type;
+    }
+
+    /**
+     * Helper function to recursively delete a directory.
+     * @param dir the directory to be deleted
+     */
+    private void clearDir(File dir) {
+
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file: files) {
+                clearDir(file);
+            }
+        }
+        dir.delete();
+    }
+    
+    /**
+     * Helper function to recursively get all files under the root directory.
+     * @param dir the local root directory
+     */
+    private void getAllFiles(File dir) {
+        File[] fileList = dir.listFiles();
+
+        for(File file : fileList) {
+            if(file.isFile()) {
+                Path absolutePath = Paths.get(file.getPath());
+                Path relativePath = getRelativePath(absolutePath);
+                initialFiles.add(relativePath.toString());
+            } else {
+                getAllFiles(file);
+            }
+        }
+    }
+
+    /**
+     * Convert a relative path to the absolute path.
+     * @param path the relative path
+     * @return the absolute path
+     */
+    private Path getAbsolutePath(Path path) {
+        String pathStr = path.toString();
+
+        // just in case
+        if (pathStr.startsWith(rootPath)) {
+            return path;
+        }
+        return Paths.get(rootPath + pathStr);
+    }
+
+    /**
+     * Convert a absolute path to the relative path
+     * @param path the absolute path
+     * @return the relative path
+     */
+    private Path getRelativePath(Path path) {
+        String pathStr = path.toString();
+
+        // just in case
+        if (!pathStr.startsWith(rootPath)) {
+            return path;
+        }
+        return Paths.get(pathStr.substring(rootPath.length()));
+    }
+
+    /**
+     * Main driver to start the storage server and redirect all print lines to "debug.txt" file.
+     * @param args arguments to be read
+     * @throws IOException IO exception
+     * @throws InterruptedException 
+     */
     public static void main(String[] args) throws IOException, InterruptedException {
         FileOutputStream f = new FileOutputStream("debug.txt");
         System.setOut(new PrintStream(f));
