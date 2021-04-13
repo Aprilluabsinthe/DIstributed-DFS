@@ -1,0 +1,1659 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>Structures API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>Structures</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import threading
+from threading import Event, Condition
+
+
+class Registration:
+    &#34;&#34;&#34;
+    the class for StorageServer Registration
+    
+    **membership**:
+        *storage_ip*: storage server IP address.
+            
+        *client_port*: storage server port listening for the requests from client (aka storage port).
+            
+        *command_port*: storage server port listening for the requests from the naming server.
+            
+        *files*: list of files stored on the storage server. This list is merged with the directory tree already present on the naming server. Duplicate filenames are dropped.
+    &#34;&#34;&#34;
+    storage_ip = None
+    client_port = None
+    command_port = None
+    files = None
+
+    def __init__(self, storage_ip, client_port, command_port, files=None):
+        &#34;&#34;&#34;
+        init function for Registration
+        
+        **param** storage_ip: storage server IP address.
+        
+        **param** client_port: storage server port listening for the requests from client (aka storage port).
+        
+        **param** command_port: storage server port listening for the requests from the naming server.
+        
+        **param** files: list of files stored on the storage server. This list is merged with the directory tree already present on the naming server. Duplicate filenames are
+        &#34;&#34;&#34;
+        self.storage_ip = storage_ip
+        self.client_port = client_port
+        self.command_port = command_port
+        self.files = files
+
+    def __eq__(self, other):
+        &#34;&#34;&#34;
+        rewrite equal function in Registration
+
+        **param** other: an other Registration object
+
+        **return**: `True` if storage_ip,client_port,command_port are the same, `False` if any one elements is not.
+        &#34;&#34;&#34;
+        return self.storage_ip == other.storage_ip and self.client_port == other.client_port and self.command_port == other.command_port and self.files == other.files
+
+    def is_different_server(self, other):
+        &#34;&#34;&#34;
+        if have different command_port, is different server
+
+        **param** other: an other Registration object
+
+        **return**: `True` if command_port not equals, `False` if command_port equals
+        &#34;&#34;&#34;
+        return self.command_port != other.command_port
+
+
+class LockRequestQueue:
+    &#34;&#34;&#34;
+    a Queue-like struture for queueing up lock requests.
+
+    **membership**:
+        *shared_counter*:the counter for reads lock requests
+
+        *queue*:the queue queuing reads requests
+
+        *queue_size*:the queue_size
+    &#34;&#34;&#34;
+    shared_counter = 0
+    queue = list()
+    queue_size = 0
+
+    def __init__(self):
+        &#34;&#34;&#34;
+        the init function for LockRequestQueue
+            ``shared_counter = 0
+            queue = []
+            queue_size = len(queue) = 0``
+        &#34;&#34;&#34;
+        self.shared_counter = 0
+        self.queue = list()
+        self.queue_size = 0
+
+
+class ReplicaReport:
+    &#34;&#34;&#34;
+    the structure for replication storage
+
+    **membership**:
+        *command_ports*: the storages that stores the file
+
+        *replicaed_times*: the times of file replication
+
+        *visited_times*: the cumulated access time for the file
+
+        *is_replicated*: the file is replicated or not
+    &#34;&#34;&#34;
+    command_ports = list()
+    replicaed_times = 0
+    visited_times = 1
+    is_replicated = False
+
+    def __init__(self):
+        &#34;&#34;&#34;
+        the init function for ReplicaReport
+
+            ``command_ports = []
+            replicaed_times = 0
+            visited_times = 1
+            is_replicated = False``
+        &#34;&#34;&#34;
+        command_ports = list()
+        replicaed_times = 0
+        visited_times = 1
+        is_replicated = False
+
+
+class FileLeaf:
+    &#34;&#34;&#34;
+    the lock structure for a file. The Node-like structure that contains the file lock
+
+    **membership**:
+        *file_name*: the short file name(not full path)
+
+        *locked*:the fileLeaf is locked or not
+
+        *exclusive*: the lock is exclusive or not
+
+        *filelock*:the Thread lock for lock control
+    &#34;&#34;&#34;
+    file_name = None
+    locked = False
+    exclusive = False
+    filelock = None
+
+    def __init__(self, file_name, exclusive=None):
+        &#34;&#34;&#34;
+        the init function for FileLeaf, set lock to initial state
+
+        **param** file_name: the short file name
+
+        **param** exclusive: the lock is exclusive or not, default is exclusive which is safer
+        &#34;&#34;&#34;
+        self.file_name = file_name
+        self.exclusive = exclusive
+        self.filelock = Event()
+
+    def acquire(self, exclusive=None):
+        &#34;&#34;&#34;
+        acquire the file lock in this FileLeaf
+
+        **param** exclusive: the lock is exclusive or not, default is exclusive which is safer
+        &#34;&#34;&#34;
+        self.filelock.clear()
+        self.locked = True
+        self.exclusive = exclusive
+
+    def release(self):
+        &#34;&#34;&#34;
+        release the file lock in this FileLeaf
+        &#34;&#34;&#34;
+        self.filelock.set()
+        self.locked = False
+        self.exclusive = False
+
+
+class DirLockReport:
+    &#34;&#34;&#34;
+    the lock structure for a directory
+
+    **membership**:
+        *filelock*: the lock for the directory
+
+        *locked*: the fileLeaf is locked or not
+
+        *exclusive*: the lock is exclusive or not
+    &#34;&#34;&#34;
+    filelock = None
+    locked = False
+    exclusive = False
+
+    def __init__(self, exclusive=None):
+        &#34;&#34;&#34;
+        The initialization for DirLockReport
+
+        set lock to initialization, locked to False, exclusive to False
+        &#34;&#34;&#34;
+        self.filelock = Event()
+        self.locked = False
+        self.exclusive = False
+
+    def acquire(self, exclusive=None):
+        &#34;&#34;&#34;
+        acquire the directory lock in this directory
+
+        **param** exclusive: the lock is exclusive or not
+        &#34;&#34;&#34;
+        self.filelock.clear()
+        self.locked = True
+        self.exclusive = exclusive
+
+    def release(self):
+        &#34;&#34;&#34;
+        release the directory lock in this directory
+        &#34;&#34;&#34;
+        self.filelock.set()
+        self.locked = False
+        self.exclusive = False
+
+    def set_status(self, locked=None, exclusive=None):
+        &#34;&#34;&#34;
+        set locked and exclusive for seperate use
+
+        **param** locked: whether the directory is locked
+
+        **param** exclusive: whether the directory lock is exclusive
+        &#34;&#34;&#34;
+        self.locked = locked
+        self.exclusive = exclusive
+
+
+
+&#34;&#34;&#34;
+************************************ unused ************************************
+
+************************************ unused ************************************
+&#34;&#34;&#34;
+
+class ClientHost:
+    &#34;&#34;&#34;
+    the class for ClientHost information,
+
+    **membership**:
+        *storage_ip*: storage server IP address.
+
+        *client_port*: storage server port listening for the requests from client (aka storage port).
+    &#34;&#34;&#34;
+    storage_ip = None
+    client_port = None
+
+    def __init__(self, storage_ip, client_port):
+        &#34;&#34;&#34;
+        **param** storage_ip: storage server IP address.
+
+        **param** client_port: storage server port listening for the requests from client (aka storage port).
+        &#34;&#34;&#34;
+        self.storage_ip = storage_ip
+        self.client_port = client_port
+
+    def __eq__(self, other):
+        &#34;&#34;&#34;
+        two ClientHosts are considered the same if have the same storage_ip and client_port(aka storage port)
+
+        **param** other: the ClientHosts to compared to
+
+        **return**: True if storage_ip and client_port are same.
+        &#34;&#34;&#34;
+        return self.storage_ip == other.storage_ip and self.client_port == other.client_port
+
+    def get_storage_ip(self):
+        &#34;&#34;&#34;
+        getter for storage_ip
+
+        **return**: storage_ip
+        &#34;&#34;&#34;
+        return self.storage_ip
+
+    def get_client_port(self):
+        &#34;&#34;&#34;
+        getter for client_port
+
+        **return**: client_port
+        &#34;&#34;&#34;
+        return self.client_port
+
+class FileLock:
+    &#34;&#34;&#34;
+    FileLock using self-written RWLock
+    &#34;&#34;&#34;
+    file_name = None
+    is_locked = False
+    rwlock = None
+
+    def __init__(self, file_name):
+        &#34;&#34;&#34;
+        init for FileLock
+
+        **param** file_name: the name of the file
+        &#34;&#34;&#34;
+        self.file_name = file_name
+        self.is_locked = False
+        self.rwlock = RWLock()
+
+    def read_acquire(self):
+        &#34;&#34;&#34;
+        acquire reader lock(aka non-exclusive, shared)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = True
+        self.rwlock = RWLock().read_acquire()
+
+    def read_release(self):
+        &#34;&#34;&#34;
+        release reader lock(aka non-exclusive, shared)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = False
+        self.rwlock = RWLock().read_acquire()
+
+    def write_acquire(self):
+        &#34;&#34;&#34;
+        acquire writer lock(aka exclusive)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = True
+        self.rwlock = RWLock().write_acquire()
+
+    def write_release(self):
+        &#34;&#34;&#34;
+        release writer lock(aka exclusive)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = False
+        self.rwlock = RWLock().write_release()
+
+
+class RWLock(object):
+    &#34;&#34;&#34;
+    self written RWLock using thread condition
+    &#34;&#34;&#34;
+    def __init__(self):
+        &#34;&#34;&#34;
+        initialize function
+        &#34;&#34;&#34;
+        self.lock = threading.Lock()
+        self.rcond = threading.Condition(self.lock)
+        self.wcond = threading.Condition(self.lock)
+        self.read_waiter = 0
+        self.write_waiter = 0
+        self.state = 0
+        self.owners = []
+        self.write_first = True
+
+    def write_acquire(self, blocking=True):
+        &#34;&#34;&#34;
+        acquire writer lock
+
+        **param** blocking: whether to block or not
+
+        **return**: True of success
+        &#34;&#34;&#34;
+        me = threading.get_ident()
+        with self.lock:
+            while not self._write_acquire(me):
+                if not blocking:
+                    return False
+                self.write_waiter += 1
+                self.wcond.wait()
+                self.write_waiter -= 1
+        return True
+
+    def _write_acquire(self, me):
+        if self.state == 0 or (self.state &lt; 0 and me in self.owners):
+            self.state -= 1  # set one writer
+            self.owners.append(me)
+            return True
+        if self.state &gt; 0 and me in self.owners:
+            raise RuntimeError(&#39;cannot recursively wrlock a rdlocked lock&#39;)
+        return False
+
+    def read_acquire(self, blocking=True):
+        &#34;&#34;&#34;
+        acquire reader lock
+
+        **param** blocking: whether to block or not
+
+        **return**: True of success
+        &#34;&#34;&#34;
+        me = threading.get_ident()
+        with self.lock:
+            while not self._read_acquire(me):
+                if not blocking:
+                    return False
+                self.read_waiter += 1
+                self.rcond.wait()
+                self.read_waiter -= 1
+        return True
+
+    def _read_acquire(self, me):
+        if self.state &lt; 0:
+            # if the lock has already be acquired
+            return False
+
+        if not self.write_waiter:
+            ok = True
+        else:
+            ok = me in self.owners
+        if ok or not self.write_first:
+            self.state += 1
+            self.owners.append(me)
+            return True
+        return False
+
+    def unlock(self):
+        &#34;&#34;&#34;
+        unlock oneself
+        &#34;&#34;&#34;
+        me = threading.get_ident()
+        with self.lock:
+            try:
+                self.owners.remove(me)
+            except ValueError:
+                raise RuntimeError(&#39;cannot release un-acquired lock&#39;)
+
+            if self.state &gt; 0:
+                self.state -= 1
+            else:
+                self.state += 1
+            if not self.state:
+                if self.write_waiter and self.write_first:  # if write is waiting
+                    self.wcond.notify()
+                elif self.read_waiter:
+                    self.rcond.notify_all()
+                elif self.write_waiter:
+                    self.wcond.notify()
+
+    def read_release(self):
+        &#34;&#34;&#34;
+        unlock reader
+        &#34;&#34;&#34;
+        self.unlock(self)
+
+    def write_release(self):
+        &#34;&#34;&#34;
+        unlock writer
+        &#34;&#34;&#34;
+        self.unlock(self)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="Structures.ClientHost"><code class="flex name class">
+<span>class <span class="ident">ClientHost</span></span>
+<span>(</span><span>storage_ip, client_port)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>the class for ClientHost information,</p>
+<p><strong>membership</strong>:
+<em>storage_ip</em>: storage server IP address.</p>
+<pre><code>*client_port*: storage server port listening for the requests from client (aka storage port).
+</code></pre>
+<p><strong>param</strong> storage_ip: storage server IP address.</p>
+<p><strong>param</strong> client_port: storage server port listening for the requests from client (aka storage port).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ClientHost:
+    &#34;&#34;&#34;
+    the class for ClientHost information,
+
+    **membership**:
+        *storage_ip*: storage server IP address.
+
+        *client_port*: storage server port listening for the requests from client (aka storage port).
+    &#34;&#34;&#34;
+    storage_ip = None
+    client_port = None
+
+    def __init__(self, storage_ip, client_port):
+        &#34;&#34;&#34;
+        **param** storage_ip: storage server IP address.
+
+        **param** client_port: storage server port listening for the requests from client (aka storage port).
+        &#34;&#34;&#34;
+        self.storage_ip = storage_ip
+        self.client_port = client_port
+
+    def __eq__(self, other):
+        &#34;&#34;&#34;
+        two ClientHosts are considered the same if have the same storage_ip and client_port(aka storage port)
+
+        **param** other: the ClientHosts to compared to
+
+        **return**: True if storage_ip and client_port are same.
+        &#34;&#34;&#34;
+        return self.storage_ip == other.storage_ip and self.client_port == other.client_port
+
+    def get_storage_ip(self):
+        &#34;&#34;&#34;
+        getter for storage_ip
+
+        **return**: storage_ip
+        &#34;&#34;&#34;
+        return self.storage_ip
+
+    def get_client_port(self):
+        &#34;&#34;&#34;
+        getter for client_port
+
+        **return**: client_port
+        &#34;&#34;&#34;
+        return self.client_port</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.ClientHost.client_port"><code class="name">var <span class="ident">client_port</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.ClientHost.storage_ip"><code class="name">var <span class="ident">storage_ip</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Structures.ClientHost.get_client_port"><code class="name flex">
+<span>def <span class="ident">get_client_port</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>getter for client_port</p>
+<p><strong>return</strong>: client_port</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_client_port(self):
+    &#34;&#34;&#34;
+    getter for client_port
+
+    **return**: client_port
+    &#34;&#34;&#34;
+    return self.client_port</code></pre>
+</details>
+</dd>
+<dt id="Structures.ClientHost.get_storage_ip"><code class="name flex">
+<span>def <span class="ident">get_storage_ip</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>getter for storage_ip</p>
+<p><strong>return</strong>: storage_ip</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_storage_ip(self):
+    &#34;&#34;&#34;
+    getter for storage_ip
+
+    **return**: storage_ip
+    &#34;&#34;&#34;
+    return self.storage_ip</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.DirLockReport"><code class="flex name class">
+<span>class <span class="ident">DirLockReport</span></span>
+<span>(</span><span>exclusive=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>the lock structure for a directory</p>
+<p><strong>membership</strong>:
+<em>filelock</em>: the lock for the directory</p>
+<pre><code>*locked*: the fileLeaf is locked or not
+
+*exclusive*: the lock is exclusive or not
+</code></pre>
+<p>The initialization for DirLockReport</p>
+<p>set lock to initialization, locked to False, exclusive to False</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DirLockReport:
+    &#34;&#34;&#34;
+    the lock structure for a directory
+
+    **membership**:
+        *filelock*: the lock for the directory
+
+        *locked*: the fileLeaf is locked or not
+
+        *exclusive*: the lock is exclusive or not
+    &#34;&#34;&#34;
+    filelock = None
+    locked = False
+    exclusive = False
+
+    def __init__(self, exclusive=None):
+        &#34;&#34;&#34;
+        The initialization for DirLockReport
+
+        set lock to initialization, locked to False, exclusive to False
+        &#34;&#34;&#34;
+        self.filelock = Event()
+        self.locked = False
+        self.exclusive = False
+
+    def acquire(self, exclusive=None):
+        &#34;&#34;&#34;
+        acquire the directory lock in this directory
+
+        **param** exclusive: the lock is exclusive or not
+        &#34;&#34;&#34;
+        self.filelock.clear()
+        self.locked = True
+        self.exclusive = exclusive
+
+    def release(self):
+        &#34;&#34;&#34;
+        release the directory lock in this directory
+        &#34;&#34;&#34;
+        self.filelock.set()
+        self.locked = False
+        self.exclusive = False
+
+    def set_status(self, locked=None, exclusive=None):
+        &#34;&#34;&#34;
+        set locked and exclusive for seperate use
+
+        **param** locked: whether the directory is locked
+
+        **param** exclusive: whether the directory lock is exclusive
+        &#34;&#34;&#34;
+        self.locked = locked
+        self.exclusive = exclusive</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.DirLockReport.exclusive"><code class="name">var <span class="ident">exclusive</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.DirLockReport.filelock"><code class="name">var <span class="ident">filelock</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.DirLockReport.locked"><code class="name">var <span class="ident">locked</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Structures.DirLockReport.acquire"><code class="name flex">
+<span>def <span class="ident">acquire</span></span>(<span>self, exclusive=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>acquire the directory lock in this directory</p>
+<p><strong>param</strong> exclusive: the lock is exclusive or not</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def acquire(self, exclusive=None):
+    &#34;&#34;&#34;
+    acquire the directory lock in this directory
+
+    **param** exclusive: the lock is exclusive or not
+    &#34;&#34;&#34;
+    self.filelock.clear()
+    self.locked = True
+    self.exclusive = exclusive</code></pre>
+</details>
+</dd>
+<dt id="Structures.DirLockReport.release"><code class="name flex">
+<span>def <span class="ident">release</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>release the directory lock in this directory</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def release(self):
+    &#34;&#34;&#34;
+    release the directory lock in this directory
+    &#34;&#34;&#34;
+    self.filelock.set()
+    self.locked = False
+    self.exclusive = False</code></pre>
+</details>
+</dd>
+<dt id="Structures.DirLockReport.set_status"><code class="name flex">
+<span>def <span class="ident">set_status</span></span>(<span>self, locked=None, exclusive=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>set locked and exclusive for seperate use</p>
+<p><strong>param</strong> locked: whether the directory is locked</p>
+<p><strong>param</strong> exclusive: whether the directory lock is exclusive</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_status(self, locked=None, exclusive=None):
+    &#34;&#34;&#34;
+    set locked and exclusive for seperate use
+
+    **param** locked: whether the directory is locked
+
+    **param** exclusive: whether the directory lock is exclusive
+    &#34;&#34;&#34;
+    self.locked = locked
+    self.exclusive = exclusive</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.FileLeaf"><code class="flex name class">
+<span>class <span class="ident">FileLeaf</span></span>
+<span>(</span><span>file_name, exclusive=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>the lock structure for a file. The Node-like structure that contains the file lock</p>
+<p><strong>membership</strong>:
+<em>file_name</em>: the short file name(not full path)</p>
+<pre><code>*locked*:the fileLeaf is locked or not
+
+*exclusive*: the lock is exclusive or not
+
+*filelock*:the Thread lock for lock control
+</code></pre>
+<p>the init function for FileLeaf, set lock to initial state</p>
+<p><strong>param</strong> file_name: the short file name</p>
+<p><strong>param</strong> exclusive: the lock is exclusive or not, default is exclusive which is safer</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FileLeaf:
+    &#34;&#34;&#34;
+    the lock structure for a file. The Node-like structure that contains the file lock
+
+    **membership**:
+        *file_name*: the short file name(not full path)
+
+        *locked*:the fileLeaf is locked or not
+
+        *exclusive*: the lock is exclusive or not
+
+        *filelock*:the Thread lock for lock control
+    &#34;&#34;&#34;
+    file_name = None
+    locked = False
+    exclusive = False
+    filelock = None
+
+    def __init__(self, file_name, exclusive=None):
+        &#34;&#34;&#34;
+        the init function for FileLeaf, set lock to initial state
+
+        **param** file_name: the short file name
+
+        **param** exclusive: the lock is exclusive or not, default is exclusive which is safer
+        &#34;&#34;&#34;
+        self.file_name = file_name
+        self.exclusive = exclusive
+        self.filelock = Event()
+
+    def acquire(self, exclusive=None):
+        &#34;&#34;&#34;
+        acquire the file lock in this FileLeaf
+
+        **param** exclusive: the lock is exclusive or not, default is exclusive which is safer
+        &#34;&#34;&#34;
+        self.filelock.clear()
+        self.locked = True
+        self.exclusive = exclusive
+
+    def release(self):
+        &#34;&#34;&#34;
+        release the file lock in this FileLeaf
+        &#34;&#34;&#34;
+        self.filelock.set()
+        self.locked = False
+        self.exclusive = False</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.FileLeaf.exclusive"><code class="name">var <span class="ident">exclusive</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.FileLeaf.file_name"><code class="name">var <span class="ident">file_name</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.FileLeaf.filelock"><code class="name">var <span class="ident">filelock</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.FileLeaf.locked"><code class="name">var <span class="ident">locked</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Structures.FileLeaf.acquire"><code class="name flex">
+<span>def <span class="ident">acquire</span></span>(<span>self, exclusive=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>acquire the file lock in this FileLeaf</p>
+<p><strong>param</strong> exclusive: the lock is exclusive or not, default is exclusive which is safer</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def acquire(self, exclusive=None):
+    &#34;&#34;&#34;
+    acquire the file lock in this FileLeaf
+
+    **param** exclusive: the lock is exclusive or not, default is exclusive which is safer
+    &#34;&#34;&#34;
+    self.filelock.clear()
+    self.locked = True
+    self.exclusive = exclusive</code></pre>
+</details>
+</dd>
+<dt id="Structures.FileLeaf.release"><code class="name flex">
+<span>def <span class="ident">release</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>release the file lock in this FileLeaf</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def release(self):
+    &#34;&#34;&#34;
+    release the file lock in this FileLeaf
+    &#34;&#34;&#34;
+    self.filelock.set()
+    self.locked = False
+    self.exclusive = False</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.FileLock"><code class="flex name class">
+<span>class <span class="ident">FileLock</span></span>
+<span>(</span><span>file_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>FileLock using self-written RWLock</p>
+<p>init for FileLock</p>
+<p><strong>param</strong> file_name: the name of the file</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FileLock:
+    &#34;&#34;&#34;
+    FileLock using self-written RWLock
+    &#34;&#34;&#34;
+    file_name = None
+    is_locked = False
+    rwlock = None
+
+    def __init__(self, file_name):
+        &#34;&#34;&#34;
+        init for FileLock
+
+        **param** file_name: the name of the file
+        &#34;&#34;&#34;
+        self.file_name = file_name
+        self.is_locked = False
+        self.rwlock = RWLock()
+
+    def read_acquire(self):
+        &#34;&#34;&#34;
+        acquire reader lock(aka non-exclusive, shared)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = True
+        self.rwlock = RWLock().read_acquire()
+
+    def read_release(self):
+        &#34;&#34;&#34;
+        release reader lock(aka non-exclusive, shared)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = False
+        self.rwlock = RWLock().read_acquire()
+
+    def write_acquire(self):
+        &#34;&#34;&#34;
+        acquire writer lock(aka exclusive)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = True
+        self.rwlock = RWLock().write_acquire()
+
+    def write_release(self):
+        &#34;&#34;&#34;
+        release writer lock(aka exclusive)
+
+        **return**:
+        &#34;&#34;&#34;
+        self.is_locked = False
+        self.rwlock = RWLock().write_release()</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.FileLock.file_name"><code class="name">var <span class="ident">file_name</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.FileLock.is_locked"><code class="name">var <span class="ident">is_locked</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.FileLock.rwlock"><code class="name">var <span class="ident">rwlock</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Structures.FileLock.read_acquire"><code class="name flex">
+<span>def <span class="ident">read_acquire</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>acquire reader lock(aka non-exclusive, shared)</p>
+<p><strong>return</strong>:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_acquire(self):
+    &#34;&#34;&#34;
+    acquire reader lock(aka non-exclusive, shared)
+
+    **return**:
+    &#34;&#34;&#34;
+    self.is_locked = True
+    self.rwlock = RWLock().read_acquire()</code></pre>
+</details>
+</dd>
+<dt id="Structures.FileLock.read_release"><code class="name flex">
+<span>def <span class="ident">read_release</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>release reader lock(aka non-exclusive, shared)</p>
+<p><strong>return</strong>:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_release(self):
+    &#34;&#34;&#34;
+    release reader lock(aka non-exclusive, shared)
+
+    **return**:
+    &#34;&#34;&#34;
+    self.is_locked = False
+    self.rwlock = RWLock().read_acquire()</code></pre>
+</details>
+</dd>
+<dt id="Structures.FileLock.write_acquire"><code class="name flex">
+<span>def <span class="ident">write_acquire</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>acquire writer lock(aka exclusive)</p>
+<p><strong>return</strong>:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_acquire(self):
+    &#34;&#34;&#34;
+    acquire writer lock(aka exclusive)
+
+    **return**:
+    &#34;&#34;&#34;
+    self.is_locked = True
+    self.rwlock = RWLock().write_acquire()</code></pre>
+</details>
+</dd>
+<dt id="Structures.FileLock.write_release"><code class="name flex">
+<span>def <span class="ident">write_release</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>release writer lock(aka exclusive)</p>
+<p><strong>return</strong>:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_release(self):
+    &#34;&#34;&#34;
+    release writer lock(aka exclusive)
+
+    **return**:
+    &#34;&#34;&#34;
+    self.is_locked = False
+    self.rwlock = RWLock().write_release()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.LockRequestQueue"><code class="flex name class">
+<span>class <span class="ident">LockRequestQueue</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>a Queue-like struture for queueing up lock requests.</p>
+<p><strong>membership</strong>:
+<em>shared_counter</em>:the counter for reads lock requests</p>
+<pre><code>*queue*:the queue queuing reads requests
+
+*queue_size*:the queue_size
+</code></pre>
+<p>the init function for LockRequestQueue
+<code>shared_counter = 0
+queue = []
+queue_size = len(queue) = 0</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LockRequestQueue:
+    &#34;&#34;&#34;
+    a Queue-like struture for queueing up lock requests.
+
+    **membership**:
+        *shared_counter*:the counter for reads lock requests
+
+        *queue*:the queue queuing reads requests
+
+        *queue_size*:the queue_size
+    &#34;&#34;&#34;
+    shared_counter = 0
+    queue = list()
+    queue_size = 0
+
+    def __init__(self):
+        &#34;&#34;&#34;
+        the init function for LockRequestQueue
+            ``shared_counter = 0
+            queue = []
+            queue_size = len(queue) = 0``
+        &#34;&#34;&#34;
+        self.shared_counter = 0
+        self.queue = list()
+        self.queue_size = 0</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.LockRequestQueue.queue"><code class="name">var <span class="ident">queue</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.LockRequestQueue.queue_size"><code class="name">var <span class="ident">queue_size</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.LockRequestQueue.shared_counter"><code class="name">var <span class="ident">shared_counter</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.RWLock"><code class="flex name class">
+<span>class <span class="ident">RWLock</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>self written RWLock using thread condition</p>
+<p>initialize function</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RWLock(object):
+    &#34;&#34;&#34;
+    self written RWLock using thread condition
+    &#34;&#34;&#34;
+    def __init__(self):
+        &#34;&#34;&#34;
+        initialize function
+        &#34;&#34;&#34;
+        self.lock = threading.Lock()
+        self.rcond = threading.Condition(self.lock)
+        self.wcond = threading.Condition(self.lock)
+        self.read_waiter = 0
+        self.write_waiter = 0
+        self.state = 0
+        self.owners = []
+        self.write_first = True
+
+    def write_acquire(self, blocking=True):
+        &#34;&#34;&#34;
+        acquire writer lock
+
+        **param** blocking: whether to block or not
+
+        **return**: True of success
+        &#34;&#34;&#34;
+        me = threading.get_ident()
+        with self.lock:
+            while not self._write_acquire(me):
+                if not blocking:
+                    return False
+                self.write_waiter += 1
+                self.wcond.wait()
+                self.write_waiter -= 1
+        return True
+
+    def _write_acquire(self, me):
+        if self.state == 0 or (self.state &lt; 0 and me in self.owners):
+            self.state -= 1  # set one writer
+            self.owners.append(me)
+            return True
+        if self.state &gt; 0 and me in self.owners:
+            raise RuntimeError(&#39;cannot recursively wrlock a rdlocked lock&#39;)
+        return False
+
+    def read_acquire(self, blocking=True):
+        &#34;&#34;&#34;
+        acquire reader lock
+
+        **param** blocking: whether to block or not
+
+        **return**: True of success
+        &#34;&#34;&#34;
+        me = threading.get_ident()
+        with self.lock:
+            while not self._read_acquire(me):
+                if not blocking:
+                    return False
+                self.read_waiter += 1
+                self.rcond.wait()
+                self.read_waiter -= 1
+        return True
+
+    def _read_acquire(self, me):
+        if self.state &lt; 0:
+            # if the lock has already be acquired
+            return False
+
+        if not self.write_waiter:
+            ok = True
+        else:
+            ok = me in self.owners
+        if ok or not self.write_first:
+            self.state += 1
+            self.owners.append(me)
+            return True
+        return False
+
+    def unlock(self):
+        &#34;&#34;&#34;
+        unlock oneself
+        &#34;&#34;&#34;
+        me = threading.get_ident()
+        with self.lock:
+            try:
+                self.owners.remove(me)
+            except ValueError:
+                raise RuntimeError(&#39;cannot release un-acquired lock&#39;)
+
+            if self.state &gt; 0:
+                self.state -= 1
+            else:
+                self.state += 1
+            if not self.state:
+                if self.write_waiter and self.write_first:  # if write is waiting
+                    self.wcond.notify()
+                elif self.read_waiter:
+                    self.rcond.notify_all()
+                elif self.write_waiter:
+                    self.wcond.notify()
+
+    def read_release(self):
+        &#34;&#34;&#34;
+        unlock reader
+        &#34;&#34;&#34;
+        self.unlock(self)
+
+    def write_release(self):
+        &#34;&#34;&#34;
+        unlock writer
+        &#34;&#34;&#34;
+        self.unlock(self)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="Structures.RWLock.read_acquire"><code class="name flex">
+<span>def <span class="ident">read_acquire</span></span>(<span>self, blocking=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>acquire reader lock</p>
+<p><strong>param</strong> blocking: whether to block or not</p>
+<p><strong>return</strong>: True of success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_acquire(self, blocking=True):
+    &#34;&#34;&#34;
+    acquire reader lock
+
+    **param** blocking: whether to block or not
+
+    **return**: True of success
+    &#34;&#34;&#34;
+    me = threading.get_ident()
+    with self.lock:
+        while not self._read_acquire(me):
+            if not blocking:
+                return False
+            self.read_waiter += 1
+            self.rcond.wait()
+            self.read_waiter -= 1
+    return True</code></pre>
+</details>
+</dd>
+<dt id="Structures.RWLock.read_release"><code class="name flex">
+<span>def <span class="ident">read_release</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>unlock reader</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_release(self):
+    &#34;&#34;&#34;
+    unlock reader
+    &#34;&#34;&#34;
+    self.unlock(self)</code></pre>
+</details>
+</dd>
+<dt id="Structures.RWLock.unlock"><code class="name flex">
+<span>def <span class="ident">unlock</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>unlock oneself</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unlock(self):
+    &#34;&#34;&#34;
+    unlock oneself
+    &#34;&#34;&#34;
+    me = threading.get_ident()
+    with self.lock:
+        try:
+            self.owners.remove(me)
+        except ValueError:
+            raise RuntimeError(&#39;cannot release un-acquired lock&#39;)
+
+        if self.state &gt; 0:
+            self.state -= 1
+        else:
+            self.state += 1
+        if not self.state:
+            if self.write_waiter and self.write_first:  # if write is waiting
+                self.wcond.notify()
+            elif self.read_waiter:
+                self.rcond.notify_all()
+            elif self.write_waiter:
+                self.wcond.notify()</code></pre>
+</details>
+</dd>
+<dt id="Structures.RWLock.write_acquire"><code class="name flex">
+<span>def <span class="ident">write_acquire</span></span>(<span>self, blocking=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>acquire writer lock</p>
+<p><strong>param</strong> blocking: whether to block or not</p>
+<p><strong>return</strong>: True of success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_acquire(self, blocking=True):
+    &#34;&#34;&#34;
+    acquire writer lock
+
+    **param** blocking: whether to block or not
+
+    **return**: True of success
+    &#34;&#34;&#34;
+    me = threading.get_ident()
+    with self.lock:
+        while not self._write_acquire(me):
+            if not blocking:
+                return False
+            self.write_waiter += 1
+            self.wcond.wait()
+            self.write_waiter -= 1
+    return True</code></pre>
+</details>
+</dd>
+<dt id="Structures.RWLock.write_release"><code class="name flex">
+<span>def <span class="ident">write_release</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>unlock writer</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_release(self):
+    &#34;&#34;&#34;
+    unlock writer
+    &#34;&#34;&#34;
+    self.unlock(self)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.Registration"><code class="flex name class">
+<span>class <span class="ident">Registration</span></span>
+<span>(</span><span>storage_ip, client_port, command_port, files=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>the class for StorageServer Registration</p>
+<p><strong>membership</strong>:
+<em>storage_ip</em>: storage server IP address.</p>
+<pre><code>*client_port*: storage server port listening for the requests from client (aka storage port).
+
+*command_port*: storage server port listening for the requests from the naming server.
+
+*files*: list of files stored on the storage server. This list is merged with the directory tree already present on the naming server. Duplicate filenames are dropped.
+</code></pre>
+<p>init function for Registration</p>
+<p><strong>param</strong> storage_ip: storage server IP address.</p>
+<p><strong>param</strong> client_port: storage server port listening for the requests from client (aka storage port).</p>
+<p><strong>param</strong> command_port: storage server port listening for the requests from the naming server.</p>
+<p><strong>param</strong> files: list of files stored on the storage server. This list is merged with the directory tree already present on the naming server. Duplicate filenames are</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Registration:
+    &#34;&#34;&#34;
+    the class for StorageServer Registration
+    
+    **membership**:
+        *storage_ip*: storage server IP address.
+            
+        *client_port*: storage server port listening for the requests from client (aka storage port).
+            
+        *command_port*: storage server port listening for the requests from the naming server.
+            
+        *files*: list of files stored on the storage server. This list is merged with the directory tree already present on the naming server. Duplicate filenames are dropped.
+    &#34;&#34;&#34;
+    storage_ip = None
+    client_port = None
+    command_port = None
+    files = None
+
+    def __init__(self, storage_ip, client_port, command_port, files=None):
+        &#34;&#34;&#34;
+        init function for Registration
+        
+        **param** storage_ip: storage server IP address.
+        
+        **param** client_port: storage server port listening for the requests from client (aka storage port).
+        
+        **param** command_port: storage server port listening for the requests from the naming server.
+        
+        **param** files: list of files stored on the storage server. This list is merged with the directory tree already present on the naming server. Duplicate filenames are
+        &#34;&#34;&#34;
+        self.storage_ip = storage_ip
+        self.client_port = client_port
+        self.command_port = command_port
+        self.files = files
+
+    def __eq__(self, other):
+        &#34;&#34;&#34;
+        rewrite equal function in Registration
+
+        **param** other: an other Registration object
+
+        **return**: `True` if storage_ip,client_port,command_port are the same, `False` if any one elements is not.
+        &#34;&#34;&#34;
+        return self.storage_ip == other.storage_ip and self.client_port == other.client_port and self.command_port == other.command_port and self.files == other.files
+
+    def is_different_server(self, other):
+        &#34;&#34;&#34;
+        if have different command_port, is different server
+
+        **param** other: an other Registration object
+
+        **return**: `True` if command_port not equals, `False` if command_port equals
+        &#34;&#34;&#34;
+        return self.command_port != other.command_port</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.Registration.client_port"><code class="name">var <span class="ident">client_port</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.Registration.command_port"><code class="name">var <span class="ident">command_port</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.Registration.files"><code class="name">var <span class="ident">files</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.Registration.storage_ip"><code class="name">var <span class="ident">storage_ip</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="Structures.Registration.is_different_server"><code class="name flex">
+<span>def <span class="ident">is_different_server</span></span>(<span>self, other)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>if have different command_port, is different server</p>
+<p><strong>param</strong> other: an other Registration object</p>
+<p><strong>return</strong>: <code>True</code> if command_port not equals, <code>False</code> if command_port equals</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_different_server(self, other):
+    &#34;&#34;&#34;
+    if have different command_port, is different server
+
+    **param** other: an other Registration object
+
+    **return**: `True` if command_port not equals, `False` if command_port equals
+    &#34;&#34;&#34;
+    return self.command_port != other.command_port</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="Structures.ReplicaReport"><code class="flex name class">
+<span>class <span class="ident">ReplicaReport</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>the structure for replication storage</p>
+<p><strong>membership</strong>:
+<em>command_ports</em>: the storages that stores the file</p>
+<pre><code>*replicaed_times*: the times of file replication
+
+*visited_times*: the cumulated access time for the file
+
+*is_replicated*: the file is replicated or not
+</code></pre>
+<p>the init function for ReplicaReport</p>
+<pre><code>``command_ports = []
+replicaed_times = 0
+visited_times = 1
+is_replicated = False``
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ReplicaReport:
+    &#34;&#34;&#34;
+    the structure for replication storage
+
+    **membership**:
+        *command_ports*: the storages that stores the file
+
+        *replicaed_times*: the times of file replication
+
+        *visited_times*: the cumulated access time for the file
+
+        *is_replicated*: the file is replicated or not
+    &#34;&#34;&#34;
+    command_ports = list()
+    replicaed_times = 0
+    visited_times = 1
+    is_replicated = False
+
+    def __init__(self):
+        &#34;&#34;&#34;
+        the init function for ReplicaReport
+
+            ``command_ports = []
+            replicaed_times = 0
+            visited_times = 1
+            is_replicated = False``
+        &#34;&#34;&#34;
+        command_ports = list()
+        replicaed_times = 0
+        visited_times = 1
+        is_replicated = False</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="Structures.ReplicaReport.command_ports"><code class="name">var <span class="ident">command_ports</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.ReplicaReport.is_replicated"><code class="name">var <span class="ident">is_replicated</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.ReplicaReport.replicaed_times"><code class="name">var <span class="ident">replicaed_times</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="Structures.ReplicaReport.visited_times"><code class="name">var <span class="ident">visited_times</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="Structures.ClientHost" href="#Structures.ClientHost">ClientHost</a></code></h4>
+<ul class="">
+<li><code><a title="Structures.ClientHost.client_port" href="#Structures.ClientHost.client_port">client_port</a></code></li>
+<li><code><a title="Structures.ClientHost.get_client_port" href="#Structures.ClientHost.get_client_port">get_client_port</a></code></li>
+<li><code><a title="Structures.ClientHost.get_storage_ip" href="#Structures.ClientHost.get_storage_ip">get_storage_ip</a></code></li>
+<li><code><a title="Structures.ClientHost.storage_ip" href="#Structures.ClientHost.storage_ip">storage_ip</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.DirLockReport" href="#Structures.DirLockReport">DirLockReport</a></code></h4>
+<ul class="two-column">
+<li><code><a title="Structures.DirLockReport.acquire" href="#Structures.DirLockReport.acquire">acquire</a></code></li>
+<li><code><a title="Structures.DirLockReport.exclusive" href="#Structures.DirLockReport.exclusive">exclusive</a></code></li>
+<li><code><a title="Structures.DirLockReport.filelock" href="#Structures.DirLockReport.filelock">filelock</a></code></li>
+<li><code><a title="Structures.DirLockReport.locked" href="#Structures.DirLockReport.locked">locked</a></code></li>
+<li><code><a title="Structures.DirLockReport.release" href="#Structures.DirLockReport.release">release</a></code></li>
+<li><code><a title="Structures.DirLockReport.set_status" href="#Structures.DirLockReport.set_status">set_status</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.FileLeaf" href="#Structures.FileLeaf">FileLeaf</a></code></h4>
+<ul class="two-column">
+<li><code><a title="Structures.FileLeaf.acquire" href="#Structures.FileLeaf.acquire">acquire</a></code></li>
+<li><code><a title="Structures.FileLeaf.exclusive" href="#Structures.FileLeaf.exclusive">exclusive</a></code></li>
+<li><code><a title="Structures.FileLeaf.file_name" href="#Structures.FileLeaf.file_name">file_name</a></code></li>
+<li><code><a title="Structures.FileLeaf.filelock" href="#Structures.FileLeaf.filelock">filelock</a></code></li>
+<li><code><a title="Structures.FileLeaf.locked" href="#Structures.FileLeaf.locked">locked</a></code></li>
+<li><code><a title="Structures.FileLeaf.release" href="#Structures.FileLeaf.release">release</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.FileLock" href="#Structures.FileLock">FileLock</a></code></h4>
+<ul class="two-column">
+<li><code><a title="Structures.FileLock.file_name" href="#Structures.FileLock.file_name">file_name</a></code></li>
+<li><code><a title="Structures.FileLock.is_locked" href="#Structures.FileLock.is_locked">is_locked</a></code></li>
+<li><code><a title="Structures.FileLock.read_acquire" href="#Structures.FileLock.read_acquire">read_acquire</a></code></li>
+<li><code><a title="Structures.FileLock.read_release" href="#Structures.FileLock.read_release">read_release</a></code></li>
+<li><code><a title="Structures.FileLock.rwlock" href="#Structures.FileLock.rwlock">rwlock</a></code></li>
+<li><code><a title="Structures.FileLock.write_acquire" href="#Structures.FileLock.write_acquire">write_acquire</a></code></li>
+<li><code><a title="Structures.FileLock.write_release" href="#Structures.FileLock.write_release">write_release</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.LockRequestQueue" href="#Structures.LockRequestQueue">LockRequestQueue</a></code></h4>
+<ul class="">
+<li><code><a title="Structures.LockRequestQueue.queue" href="#Structures.LockRequestQueue.queue">queue</a></code></li>
+<li><code><a title="Structures.LockRequestQueue.queue_size" href="#Structures.LockRequestQueue.queue_size">queue_size</a></code></li>
+<li><code><a title="Structures.LockRequestQueue.shared_counter" href="#Structures.LockRequestQueue.shared_counter">shared_counter</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.RWLock" href="#Structures.RWLock">RWLock</a></code></h4>
+<ul class="">
+<li><code><a title="Structures.RWLock.read_acquire" href="#Structures.RWLock.read_acquire">read_acquire</a></code></li>
+<li><code><a title="Structures.RWLock.read_release" href="#Structures.RWLock.read_release">read_release</a></code></li>
+<li><code><a title="Structures.RWLock.unlock" href="#Structures.RWLock.unlock">unlock</a></code></li>
+<li><code><a title="Structures.RWLock.write_acquire" href="#Structures.RWLock.write_acquire">write_acquire</a></code></li>
+<li><code><a title="Structures.RWLock.write_release" href="#Structures.RWLock.write_release">write_release</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.Registration" href="#Structures.Registration">Registration</a></code></h4>
+<ul class="">
+<li><code><a title="Structures.Registration.client_port" href="#Structures.Registration.client_port">client_port</a></code></li>
+<li><code><a title="Structures.Registration.command_port" href="#Structures.Registration.command_port">command_port</a></code></li>
+<li><code><a title="Structures.Registration.files" href="#Structures.Registration.files">files</a></code></li>
+<li><code><a title="Structures.Registration.is_different_server" href="#Structures.Registration.is_different_server">is_different_server</a></code></li>
+<li><code><a title="Structures.Registration.storage_ip" href="#Structures.Registration.storage_ip">storage_ip</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="Structures.ReplicaReport" href="#Structures.ReplicaReport">ReplicaReport</a></code></h4>
+<ul class="">
+<li><code><a title="Structures.ReplicaReport.command_ports" href="#Structures.ReplicaReport.command_ports">command_ports</a></code></li>
+<li><code><a title="Structures.ReplicaReport.is_replicated" href="#Structures.ReplicaReport.is_replicated">is_replicated</a></code></li>
+<li><code><a title="Structures.ReplicaReport.replicaed_times" href="#Structures.ReplicaReport.replicaed_times">replicaed_times</a></code></li>
+<li><code><a title="Structures.ReplicaReport.visited_times" href="#Structures.ReplicaReport.visited_times">visited_times</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>
