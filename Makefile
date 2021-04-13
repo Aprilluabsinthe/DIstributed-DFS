@@ -29,8 +29,7 @@ include build/Makefile.separator
 .PHONY : all-classes
 all-classes :
 	javac -cp $(JARFILE) $(JAVAFILES)
-	# TODO: add command to compile your naming and storage server.
-	pip3 install -r requirements.txt
+	pip3 install -r requirements.txt | grep -v 'already satisfied' || true
 	# end
 
 # Run conformance tests.
