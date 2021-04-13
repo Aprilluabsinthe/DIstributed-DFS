@@ -15,6 +15,7 @@ JAVAFILES = */*.java */*/*.java
 DOCDIR = javadoc
 ALLDOCDIR = javadoc-all
 DOCLINK = https://docs.oracle.com/javase/8/docs/api/
+NAMINGDIR = pythondocs
 
 # Define the variable CPSEPARATOR, the classpath separator character. This is
 # : on Unix-like systems and ; on Windows. The separator is returned by a
@@ -28,6 +29,7 @@ include build/Makefile.separator
 .PHONY : all-classes
 all-classes :
 	javac -cp $(JARFILE) $(JAVAFILES)
+	pip3 install -r requirements.txt | grep -v 'already satisfied' || true
 	# TODO: add command to compile your naming and storage server.
 	# end
 
@@ -44,11 +46,13 @@ checkpoint : all-classes
 .PHONY : clean
 clean :
 	rm -rf $(JAVAFILES:.java=.class)  $(DOCDIR) $(ALLDOCDIR)
+	rm -rf $(NAMINGDIR)
 
 # Generate documentation for the public interfaces of the principal packages.
 .PHONY : docs
 docs :
 	javadoc -cp  ".$(CPSEPARATOR)$(JARFILE)" -link $(DOCLINK) -d $(DOCDIR) $(DFSPACKAGES)
+	pdoc --html -o $(NAMINGDIR) naming/NamingServer.py naming/Structures.py
 
 # Generate documentation for all classes and all members in all packages.
 .PHONY : docs-all
@@ -56,6 +60,8 @@ docs-all :
 	javadoc -cp  ".$(CPSEPARATOR)$(JARFILE)" -link $(DOCLINK) -private -sourcepath \
 	     -d $(ALLDOCDIR) $(DFSPACKAGES) test test.common test.naming \
 		test.util build
+	pdoc --html -o $(NAMINGDIR) naming/NamingServer.py naming/Structures.py
+
 
 # Dependencies for the Makefile fragment reporting the classpath separator.
 build/Makefile.separator : build/PathSeparator.class
