@@ -250,24 +250,27 @@ public class StorageServer {
                 PathRequest pathRequest = null;
 
                 try {
+                    // read path request
                     InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
                     pathRequest = gson.fromJson(isr, PathRequest.class);
 
                     Path p = Paths.get(pathRequest.path);
                     Path pathToQuery = getAbsolutePath(p);
 
+                    // if path is null or empty
                     if (pathRequest.path == null || pathRequest.path.length() == 0) {
                         this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
+                    // if path is a directory or doesn't exist
                     if (Files.isDirectory(pathToQuery) || !Files.exists(pathToQuery)) {
                         this.generateExceptionResponse(exchange, respText, "FileNotFoundException", "file not found");
                         return;
                     }
 
+                    // get the size and send it back
                     long res = Files.size(pathToQuery);
-
                     SizeReturn sizeReturn = new SizeReturn(res);
                     returnCode = 200;
                     respText = gson.toJson(sizeReturn);
@@ -312,11 +315,13 @@ public class StorageServer {
                     Path p = Paths.get(readRequest.path);
                     Path pathToRead = getAbsolutePath(p);
 
+                    // if the path is empty or null
                     if (readRequest.path == null || readRequest.path.length() == 0) {
                         this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
+                    // if the file doesn't exist or can't be read
                     if (!Files.isReadable(pathToRead) || Files.isDirectory(pathToRead)) {
                         this.generateExceptionResponse(exchange, respText, "FileNotFoundException", "file not found");
                         return;
@@ -327,15 +332,19 @@ public class StorageServer {
 
                     byte[] allData = Files.readAllBytes(pathToRead);
 
+                    // if the read length is negative, offset is negative, or read beyond the file's length
                     if (len < 0 || off + len > allData.length || off < 0) {
                         this.generateExceptionResponse(exchange, respText, "IndexOutOfBoundsException", "index out of bound");
                         return;
                     }
 
+                    // read from offset and read len bytes to the result
                     byte[] readData = new byte[len];
                     for (int i = 0; i < len; ++i) {
                         readData[i] = allData[off + i];
                     }
+
+                    // send encoded data back
                     String encodedString = Base64.getEncoder().encodeToString(readData);
                     returnCode = 200;
                     DataReturn dataReturn = new DataReturn(encodedString);
@@ -380,11 +389,13 @@ public class StorageServer {
                     Path p = Paths.get(writeRequest.path);
                     Path pathToWrite = getAbsolutePath(p);
 
+                    // if the path is null or empty
                     if (writeRequest.path == null || writeRequest.path.length() == 0) {
                         this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
                     }
 
+                    // if the file doesn't exist or can't be written
                     if (!Files.isWritable(pathToWrite) || Files.isDirectory(pathToWrite)) {
                         this.generateExceptionResponse(exchange, respText, "FileNotFoundException", "file not found");
                         return;
@@ -394,17 +405,19 @@ public class StorageServer {
                     String encodedData = writeRequest.data;
                     byte[] writeData = Base64.getDecoder().decode(encodedData);
 
+                    // if offset is negative, return index out of bound exception
                     if (off < 0L) {
                         this.generateExceptionResponse(exchange, respText, "IndexOutOfBoundsException", "index out of bound");
                         return;
                     }
 
-                    // have enough room to be written
+                    // seek to the offset and start writing all data
                     RandomAccessFile ras = new RandomAccessFile(new File(pathToWrite.toString()), "rwd");
                     ras.seek(off);
                     ras.write(writeData);
 
-                    // to truncate the remaining length
+                    // to truncate the remaining length if the new data is less than old data
+                    // this is used in copy when we attempt to replace a file with less new data
                     if (writeData.length < Files.size(pathToWrite) && off == 0L) {
                         ras.setLength(writeData.length);
                     }
@@ -452,9 +465,11 @@ public class StorageServer {
                 boolean isCreated = true;
 
                 try {
+                    // read path request
                     InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
                     pathRequest = gson.fromJson(isr, PathRequest.class);
 
+                    // if path is empty or null
                     if (pathRequest.path == null || pathRequest.path.length() == 0) {
                         this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
@@ -463,9 +478,11 @@ public class StorageServer {
                     Path p = Paths.get(pathRequest.path);
                     Path pathToCreate = getAbsolutePath(p);
 
-                    if (!pathToCreate.equals(pathToCreate.getRoot())) {
+                    // make sure that the path to create is not the root directory
+                    if (!pathToCreate.toString().equals(this.rootPath)) {
                         Path parentDir = pathToCreate.getParent();
 
+                        // if the parent directory doesn't exist, we create all directories first
                         if (parentDir != null) {
                             Files.createDirectories(parentDir);
                         }
@@ -513,9 +530,11 @@ public class StorageServer {
                 boolean isDeleted = true;
 
                 try {
+                    // read path request
                     InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
                     pathRequest = gson.fromJson(isr, PathRequest.class);
 
+                    // if the path is null or empty
                     if (pathRequest.path == null || pathRequest.path.length() == 0) {
                         this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
@@ -524,12 +543,12 @@ public class StorageServer {
                     Path p = Paths.get(pathRequest.path);
                     Path pathToDelete = getAbsolutePath(p);
 
+                    // make sure the path is not the root directory
                     if (!pathToDelete.toString().equals(this.rootPath)) {
                         System.out.println("delete start: " + pathToDelete.toString());
 
-                        // clean a directory recursively first
+                        // clear a directory recursively first
                         if (Files.isDirectory(pathToDelete)) {
-                            System.out.println("there is directory");
                             File dir = new File(pathToDelete.toString());
                             clearDir(dir);
                         } else {
@@ -579,6 +598,7 @@ public class StorageServer {
                     InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
                     copyRequest = gson.fromJson(isr, CopyRequest.class);
 
+                    // if the path is empty or null
                     if (copyRequest.path == null || copyRequest.path.length() == 0) {
                         this.generateExceptionResponse(exchange, respText, "IllegalArgumentException", "invalid path");
                         return;
@@ -589,6 +609,7 @@ public class StorageServer {
                     String serverIp = copyRequest.server_ip;
                     int serverPort = copyRequest.server_port;
 
+                    // send a size request to the remote storage server
                     HttpResponse<String> sizeResponse = getRemoteSize(serverIp, serverPort, pathFrom);
                     String sizeException = this.getPotentialException(sizeResponse);
 
@@ -607,10 +628,12 @@ public class StorageServer {
                         return;
                     }
 
+                    // no exception from read return, get the file's content
                     String data = gson.fromJson(readResponse.body(), DataReturn.class).data;
 
                     boolean createSuccess = true;
 
+                    // try to create a local file if the path doesn't exist
                     if (!Files.exists(getAbsolutePath(pathToCopy))) {
                         HttpResponse<String> createResponse = createLocalFile(pathFrom);
 
@@ -622,8 +645,8 @@ public class StorageServer {
                         createSuccess = gson.fromJson(createResponse.body(), BooleanReturn.class).success;
                     }
 
+                    // write the data (read from the remote server) to the local file just created
                     HttpResponse<String> writeResponse = writeLocalFile(pathFrom, data);
-
                     String writeException = this.getPotentialException(writeResponse);
 
                     if (writeException != null) {
@@ -633,6 +656,7 @@ public class StorageServer {
 
                     boolean writeSuccess = gson.fromJson(writeResponse.body(), BooleanReturn.class).success;
 
+                    // make sure the file is successfully created and written
                     BooleanReturn booleanReturn = new BooleanReturn(createSuccess && writeSuccess);
                     respText = gson.toJson(booleanReturn);
 
@@ -860,6 +884,7 @@ public class StorageServer {
             if(file.isFile()) {
                 Path absolutePath = Paths.get(file.getPath());
                 Path relativePath = getRelativePath(absolutePath);
+                // we only want the naming server know the relative path
                 initialFiles.add(relativePath.toString());
             } else {
                 getAllFiles(file);
