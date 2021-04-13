@@ -38,7 +38,7 @@ public class Config {
      * You should follow the order as the example shows.
     */
     public static final String startStorage0 = String.format("java -cp .%sgson-2.8.6.jar " +
-            "storage/StorageServer 7000 7001 8090 /tmp/dist-systems-0", separator);
+            "storage.StorageServer 7000 7001 8090 /tmp/dist-systems-0", separator);
 
     /**
      * Command to start the second storage server.
@@ -54,5 +54,5 @@ public class Config {
      * You should follow the order as the example shows.
     */
     public static final String startStorage1 = String.format("java -cp .%sgson-2.8.6.jar " +
-            "storage/StorageServer 7010 7011 8090 /tmp/dist-systems-1", separator);
+            "storage.StorageServer 7010 7011 8090 /tmp/dist-systems-1", separator);
 }
