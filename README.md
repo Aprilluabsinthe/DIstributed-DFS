@@ -1,13 +1,6 @@
 MAKEFILE TARGETS
 
-** IMPORTANT:
-Make sure you update the Makefile to compile your naming server and storage server correctly!
-Before running test, make sure you update the test/Config.java so that the test code could start your servers!
-
-
 ## Project Detail
-This project is done by Yuan Gu(guy) and Di Lu(dilu). for 14736-Distributed `System-Project 3-Distributed File System`
-
 the Naming Server is written in Python and the Storage Server is written in Java.
 
 the requirements for python is listed in `requirements.txt`. This has already be configued in `makefile`, You should config it by simply run `make`
